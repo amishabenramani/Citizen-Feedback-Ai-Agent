@@ -1,0 +1,24 @@
+[
+  {
+    "id": "84976522",
+    "timestamp": "2025-12-04T14:49:34.209848",
+    "name": "Amisha Ramani",
+    "email": "amishabenramani@gmail.com",
+    "category": "🚌 Transportation",
+    "urgency": "High",
+    "title": "Road reparing",
+    "feedback": "too much road demage in surat ",
+    "location": "surat gujarat",
+    "sentiment": "Neutral",
+    "sentiment_score": 0.0,
+    "keywords": [
+      "much",
+      "road",
+      "demage",
+      "surat"
+    ],
+    "summary": "General feedback: too much road demage in surat",
+    "status": "Resolved",
+    "updated_at": "2025-12-04T14:51:00.252836"
+  }
+]
