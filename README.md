@@ -45,34 +45,6 @@ cd citizen-feedback-ai-agent
 uv sync
 ```
 
-### Running the Portals
-
-**Option 1: Run Both Portals (Recommended)**
-
-Open two separate terminals:
-
-```bash
-# Terminal 1 - Citizen Portal (Port 8501)
-uv run streamlit run citizen_portal.py --server.port 8501
-
-# Terminal 2 - Admin Portal (Port 8502)
-uv run streamlit run admin_portal.py --server.port 8502
-```
-
-**Option 2: Run Single Portal**
-
-```bash
-# Citizen Portal only
-uv run streamlit run citizen_portal.py
-
-# Admin Portal only
-uv run streamlit run admin_portal.py
-```
-
-### Access URLs
-- 👥 **Citizen Portal:** http://localhost:8501
-- ⚙️ **Admin Portal:** http://localhost:8502
-
 ### Admin Login Credentials
 | Username | Password | Role |
 |----------|----------|------|
@@ -153,30 +125,7 @@ citizen-feedback-ai-agent/
 5. **Assignments** - Assign feedback to staff members
 6. **Export** - Download reports in CSV/JSON
 
-## 🔧 Configuration
 
-### Data Storage
-
-By default, feedback data is stored in `data/feedback.json`. You can modify the storage location in `src/data_manager.py`:
-
-```python
-data_manager = DataManager(data_dir="custom/path")
-```
-
-### Customizing Categories
-
-Edit the category list in `main.py`:
-
-```python
-category = st.selectbox(
-    "Category",
-    [
-        "🏗️ Infrastructure",
-        "🚌 Transportation",
-        # Add your custom categories here
-    ]
-)
-```
 
 ## 📊 API Reference
 
