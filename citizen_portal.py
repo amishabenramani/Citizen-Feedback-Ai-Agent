@@ -6,6 +6,7 @@ For citizens to submit feedback, track their submissions, and view public update
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from streamlit_option_menu import option_menu
 
 from src.feedback_analyzer import FeedbackAnalyzer
 from src.data_manager import DataManager
@@ -18,48 +19,559 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Citizen Portal (Blue Theme)
+# Premium CSS for Citizen Portal (Clean White Theme with Purple Accents)
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+    
+    /* ========== REMOVE ALL STREAMLIT DEFAULT SPACING ========== */
+    #MainMenu, footer, header,
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"] {
+        display: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        visibility: hidden !important;
+    }
+    
+    /* Root app container - zero top spacing */
+    .stApp {
+        background: #f8fafc;
+        min-height: 100vh;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* App view container */
+    [data-testid="stAppViewContainer"] {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    [data-testid="stAppViewContainer"] > .main {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Main content block container */
+    .main .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        margin-top: 0 !important;
+        max-width: 1200px;
+    }
+    
+    /* First element in main content - no extra spacing */
+    .main .block-container > div:first-child,
+    .main [data-testid="stVerticalBlock"] > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* ========== SIDEBAR - ZERO TOP SPACING ========== */
+    [data-testid="stSidebar"] {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        padding-top: 0 !important;
+        gap: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Sidebar content starts at top */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* ========== GLOBAL APP BACKGROUND ========== */
+    
+    /* Premium Header Styling */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1E40AF;
-        text-align: center;
-        margin-bottom: 1rem;
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        text-align: left;
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.5px;
     }
+    
     .sub-header {
-        font-size: 1.2rem;
-        color: #64748B;
-        text-align: center;
-        margin-bottom: 2rem;
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
+        color: #6b7280;
+        text-align: left;
+        margin-bottom: 1.5rem;
+        font-weight: 400;
     }
+    
+    /* Clean Cards */
     .citizen-card {
-        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        border-radius: 12px;
+        background: #ffffff;
+        border-radius: 16px;
         padding: 1.5rem;
-        border-left: 5px solid #3B82F6;
+        border: 1px solid #e5e7eb;
         margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+    
+    .citizen-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(124, 58, 237, 0.12);
+        border-color: #c4b5fd;
+    }
+    
+    .citizen-card h3 {
+        color: #1f2937;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .citizen-card p {
+        color: #6b7280;
+        line-height: 1.5;
+        font-size: 0.9rem;
+    }
+    
+    /* Status Badges - Clean Style */
     .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
+        padding: 0.35rem 0.85rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+        display: inline-block;
     }
-    .status-new { background: #DBEAFE; color: #1E40AF; }
-    .status-review { background: #E9D5FF; color: #6B21A8; }
-    .status-progress { background: #FEF3C7; color: #92400E; }
-    .status-resolved { background: #D1FAE5; color: #065F46; }
+    
+    .status-new { 
+        background: #eff6ff; 
+        color: #2563eb;
+    }
+    .status-review { 
+        background: #f5f3ff; 
+        color: #7c3aed;
+    }
+    .status-progress { 
+        background: #fffbeb; 
+        color: #d97706;
+    }
+    .status-resolved { 
+        background: #ecfdf5; 
+        color: #059669;
+    }
+    
+    /* Info Box */
     .info-box {
-        background: #F0F9FF;
-        border: 1px solid #BAE6FD;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
+        color: #374151;
+    }
+    
+    .info-box h4 {
+        color: #7c3aed;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .info-box ul {
+        margin: 0;
+        padding-left: 1.2rem;
+    }
+    
+    .info-box li {
+        margin-bottom: 0.4rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    
+    /* Premium Button Styling */
+    .stButton > button {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.65rem 1.5rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        border: none;
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+    }
+    
+    /* Form Inputs */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > div {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 10px !important;
+        color: #1f2937 !important;
+        font-family: 'Inter', sans-serif !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1) !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder,
+    .stTextArea > div > div > textarea::placeholder {
+        color: #9ca3af !important;
+    }
+    
+    /* Radio and Checkbox */
+    .stRadio > div {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 0.5rem;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .stRadio label, .stCheckbox label {
+        color: #374151 !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Metrics Card Styling */
+    [data-testid="stMetricValue"] {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.8rem !important;
+        font-weight: 700;
+        color: #7c3aed !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #6b7280 !important;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        border: 1px solid #e5e7eb !important;
+        color: #1f2937 !important;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 500 !important;
+    }
+    
+    .streamlit-expanderContent {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-top: none !important;
+        border-radius: 0 0 10px 10px !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 4px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 4px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
         border-radius: 8px;
+        color: #6b7280;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        padding: 0.6rem 1.2rem;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #ffffff;
+        color: #7c3aed;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: #ffffff !important;
+        color: #7c3aed !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    /* Sidebar Premium Styling - Clean Drawer Design */
+    [data-testid="stSidebar"] {
+        background: #ffffff !important;
+        border-right: 1px solid #e5e7eb;
+        min-width: 260px !important;
+        width: 260px !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        background: #ffffff !important;
+        width: 260px !important;
+        padding: 0 !important;
+    }
+    
+    /* Remove ALL extra padding and gaps from sidebar */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0 !important;
+        padding: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .element-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Force sidebar to always be visible */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        display: block !important;
+        width: 260px !important;
+        margin-left: 0 !important;
+        transform: none !important;
+    }
+    
+    /* Hide collapse button */
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    
+    [data-testid="stSidebar"] .block-container {
+        padding: 0 !important;
+    }
+    
+    /* Sidebar button styling - LEFT ALIGNED with tight spacing */
+    [data-testid="stSidebar"] .stButton {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button {
+        width: 100% !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 0.5rem 1rem !important;
+        margin: 0 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.875rem !important;
+        font-weight: 400 !important;
+        color: #4b5563 !important;
+        box-shadow: none !important;
+        transition: all 0.15s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        min-height: unset !important;
+        height: auto !important;
+        line-height: 1.4 !important;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button p {
+        text-align: left !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: #f3f4f6 !important;
+        color: #1f2937 !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button:active,
+    [data-testid="stSidebar"] .stButton > button:focus {
+        background: #ede9fe !important;
+        color: #7c3aed !important;
+        box-shadow: none !important;
+    }
+    
+    /* Active nav button */
+    [data-testid="stSidebar"] .nav-active > button {
+        background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%) !important;
+        color: #7c3aed !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Section Labels */
+    .section-label {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        color: #6b7280 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        padding: 0.5rem 1rem 0.25rem !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+    
+    /* Divider Line */
+    .sidebar-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 0.35rem 0.75rem;
+    }
+    
+    /* Sidebar text input styling */
+    [data-testid="stSidebar"] .stTextInput {
+        padding: 0 0.75rem !important;
+        margin: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .stTextInput > div > div > input {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        color: #1f2937 !important;
+        font-size: 0.8rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+    
+    [data-testid="stSidebar"] .stTextInput > div > div > input:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1) !important;
+    }
+    
+    [data-testid="stSidebar"] .stTextInput > div > div > input::placeholder {
+        color: #9ca3af !important;
+    }
+    
+    /* Sidebar Success message */
+    [data-testid="stSidebar"] .stSuccess {
+        background: #ecfdf5 !important;
+        border-left-color: #10b981 !important;
+        color: #065f46 !important;
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.5rem !important;
+        margin: 0.25rem 0.75rem !important;
+    }
+    
+    /* FAB Button */
+    .fab-button {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .fab-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+    }
+    
+    /* Divider styling */
+    hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+        margin: 2rem 0;
+    }
+    
+    /* Success/Warning/Error alerts - Light theme */
+    .stSuccess {
+        background: #ecfdf5 !important;
+        border-radius: 10px !important;
+        border-left: 4px solid #10b981 !important;
+        color: #065f46 !important;
+    }
+    
+    .stInfo {
+        background: #eff6ff !important;
+        border-radius: 10px !important;
+        border-left: 4px solid #3b82f6 !important;
+        color: #1e40af !important;
+    }
+    
+    .stWarning {
+        background: #fffbeb !important;
+        border-radius: 10px !important;
+        border-left: 4px solid #f59e0b !important;
+        color: #92400e !important;
+    }
+    
+    .stError {
+        background: #fef2f2 !important;
+        border-radius: 10px !important;
+        border-left: 4px solid #ef4444 !important;
+        color: #991b1b !important;
+    }
+    
+    /* Text color fixes - Dark text for light theme */
+    .stMarkdown, .stMarkdown p, .stMarkdown li {
+        color: #374151 !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #1f2937 !important;
+        font-family: 'Poppins', sans-serif !important;
+    }
+    
+    /* File uploader styling - Light theme */
+    [data-testid="stFileUploader"] {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 2px dashed #d1d5db;
         padding: 1rem;
     }
-    .stButton>button {
-        background-color: #3B82F6;
-        color: white;
+    
+    [data-testid="stFileUploader"]:hover {
+        border-color: #7c3aed;
+    }
+    
+    /* Slider styling */
+    .stSlider > div > div > div > div {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
+    }
+    
+    /* Caption styling */
+    .stCaption {
+        color: rgba(148, 163, 184, 0.7) !important;
+        font-family: 'Inter', sans-serif;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -78,91 +590,386 @@ def init_session_state():
 
 
 def render_sidebar():
-    """Render citizen sidebar."""
+    """Render citizen sidebar with clean, modern option_menu navigation."""
+    
+    # Initialize navigation state
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "home"
+    
+    # Custom CSS for modern sidebar styling
+    st.markdown("""
+    <style>
+    /* ========== SIDEBAR CONTAINER ========== */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #fefefe 0%, #f8f9fc 100%);
+        padding: 0;
+        border-right: 1px solid #e8e8ef;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 0;
+    }
+    
+    /* ========== SIDEBAR HEADER ========== */
+    .sidebar-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+        padding: 24px 20px;
+        margin: 0;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2);
+    }
+    
+    .sidebar-header-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .sidebar-icon {
+        width: 45px;
+        height: 45px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .sidebar-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        line-height: 1.2;
+    }
+    
+    .sidebar-subtitle {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: rgba(255,255,255,0.85);
+        margin: 0;
+        font-weight: 400;
+    }
+    
+    /* ========== SECTION TITLES ========== */
+    .section-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #8b8b9e;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        padding: 20px 20px 10px 20px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        background: #7c3aed;
+        border-radius: 50%;
+    }
+    
+    /* ========== MENU CONTAINER ========== */
+    .menu-container {
+        padding: 10px 15px;
+    }
+    
+    /* ========== OPTION MENU OVERRIDES ========== */
+    .nav-link {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        margin: 4px 0 !important;
+        padding: 12px 16px !important;
+        border: 1px solid #f0f0f5 !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    }
+    
+    .nav-link:hover {
+        background: #f5f3ff !important;
+        border-color: #ddd6fe !important;
+        transform: translateX(3px);
+        box-shadow: 0 3px 10px rgba(124, 58, 237, 0.1) !important;
+    }
+    
+    .nav-link-selected {
+        background: linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%) !important;
+        border-color: #c4b5fd !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15) !important;
+    }
+    
+    /* ========== QUICK TRACK SECTION ========== */
+    .quick-track-container {
+        padding: 0 20px;
+        margin-top: 10px;
+    }
+    
+    .quick-track-input {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-track-input:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        outline: none;
+    }
+    
+    /* ========== FOOTER ========== */
+    .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 15px 20px;
+        text-align: center;
+        border-top: 1px solid #f0f0f5;
+        background: #fafafa;
+    }
+    
+    .sidebar-footer p {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #9ca3af;
+        margin: 0;
+    }
+    
+    .sidebar-footer span {
+        color: #7c3aed;
+        font-weight: 600;
+    }
+    
+    /* ========== STREAMLIT INPUT OVERRIDE ========== */
+    [data-testid="stSidebar"] .stTextInput > div > div > input {
+        background: #ffffff !important;
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 12px 14px !important;
+        font-size: 14px !important;
+        color: #374151 !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    [data-testid="stSidebar"] .stTextInput > div > div > input:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1) !important;
+    }
+    
+    [data-testid="stSidebar"] .stTextInput > div > div > input::placeholder {
+        color: #9ca3af !important;
+    }
+    
+    /* Success message styling */
+    [data-testid="stSidebar"] .stSuccess {
+        background: #ecfdf5 !important;
+        border: 1px solid #a7f3d0 !important;
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+    
+    /* Hide default sidebar padding */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0 !important;
+    }
+    
+    /* Ensure sidebar header starts at very top */
+    [data-testid="stSidebar"] > div > div > div {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] .element-container:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     with st.sidebar:
-        st.image("https://img.icons8.com/fluency/96/city-hall.png", width=80)
-        st.title("🏛️ Citizen Portal")
-        st.caption("Your Voice Matters!")
+        # Header with gradient background - starts at top
+        st.markdown("""
+        <div class="sidebar-header" style="margin-top: -1rem;">
+            <div class="sidebar-header-content">
+                <div class="sidebar-icon">🏛️</div>
+                <div>
+                    <p class="sidebar-title">Citizen Portal</p>
+                    <p class="sidebar-subtitle">Your Voice Matters</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.divider()
+        # Add spacing
+        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
         
-        page = st.radio(
-            "Navigate",
-            [
-                "🏠 Home",
-                "📝 Submit Feedback",
-                "🔍 Track My Feedback",
-                "📢 Public Announcements",
-                "❓ Help & FAQs"
-            ],
-            label_visibility="collapsed"
+        # Main Navigation Menu
+        selected = option_menu(
+            menu_title=None,
+            options=["Home", "Submit Feedback", "Track Status", "Announcements", "Help & FAQs"],
+            icons=["house-door", "pencil-square", "search", "bell", "question-circle"],
+            default_index=0,
+            styles={
+                "container": {
+                    "padding": "10px 15px",
+                    "background-color": "transparent",
+                },
+                "icon": {
+                    "color": "#7c3aed",
+                    "font-size": "18px",
+                },
+                "nav-link": {
+                    "font-family": "'Inter', sans-serif",
+                    "font-size": "15px",
+                    "font-weight": "500",
+                    "color": "#4b5563",
+                    "padding": "12px 16px",
+                    "margin": "4px 0",
+                    "border-radius": "12px",
+                    "background": "#ffffff",
+                    "border": "1px solid #f0f0f5",
+                    "box-shadow": "0 1px 3px rgba(0,0,0,0.04)",
+                },
+                "nav-link-selected": {
+                    "background": "linear-gradient(135deg, #ede9fe 0%, #f3e8ff 100%)",
+                    "color": "#7c3aed",
+                    "font-weight": "600",
+                    "border": "1px solid #c4b5fd",
+                    "box-shadow": "0 4px 12px rgba(124, 58, 237, 0.15)",
+                },
+            },
         )
         
-        st.divider()
-        
-        # Citizen identification (optional)
-        st.subheader("🆔 Your Tracker ID")
-        citizen_email = st.text_input(
-            "Enter your email to track submissions",
-            placeholder="your@email.com",
-            label_visibility="collapsed"
-        )
-        if citizen_email:
-            st.session_state.citizen_id = citizen_email
-            st.success(f"Tracking: {citizen_email[:20]}...")
-        
-        st.divider()
-        st.caption("© 2024 City Government")
-        st.caption("Need help? Call: 311")
-        
-        return page
+        # Footer
+        st.markdown("<div style='height: 30px'></div>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center; padding: 10px 0;">
+            <p style="font-family: 'Inter', sans-serif; font-size: 12px; color: #9ca3af; margin: 0;">
+                © 2024 City Gov · <span style="color: #7c3aed; font-weight: 600;">311</span>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Map selection to page names
+    page_mapping = {
+        "Home": "🏠 Home",
+        "Submit Feedback": "📝 Submit Feedback",
+        "Track Status": "🔍 Track My Feedback",
+        "Announcements": "📢 Public Announcements",
+        "Help & FAQs": "❓ Help & FAQs"
+    }
+    
+    # Update session state
+    key_mapping = {
+        "Home": "home",
+        "Submit Feedback": "submit",
+        "Track Status": "track",
+        "Announcements": "announcements",
+        "Help & FAQs": "favorites"
+    }
+    st.session_state.current_page = key_mapping.get(selected, "home")
+    
+    return page_mapping.get(selected, "🏠 Home")
 
 
 def render_home_page():
-    """Render home page."""
-    st.markdown('<p class="main-header">🏛️ Welcome to Citizen Feedback Portal</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Your voice shapes our community. Share feedback, report issues, or suggest improvements.</p>', unsafe_allow_html=True)
+    """Render home page with premium design."""
+    # Hero Section - No top margin
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+                border-radius: 24px; padding: 2.5rem; margin-top: 0; margin-bottom: 2rem; text-align: center;
+                border: 1px solid rgba(59, 130, 246, 0.2); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+                    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+                    animation: pulse 4s ease-in-out infinite;"></div>
+        <h1 style="font-family: 'Poppins', sans-serif; font-size: 2.8rem; font-weight: 800;
+                   background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #818cf8 100%);
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                   margin: 0 0 1rem 0; position: relative; z-index: 1;">
+            🏛️ Welcome to Citizen Feedback Portal
+        </h1>
+        <p style="font-family: 'Inter', sans-serif; font-size: 1.2rem; color: rgba(148, 163, 184, 0.95);
+                  margin: 0; max-width: 600px; margin: 0 auto; position: relative; z-index: 1;">
+            Your voice shapes our community. Share feedback, report issues, or suggest improvements.
+        </p>
+    </div>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Quick action cards
+    # Quick action cards with premium glassmorphism
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        <div class="citizen-card">
-            <h3>📝 Submit Feedback</h3>
-            <p>Report issues, share concerns, or suggest improvements for your community.</p>
+        <div class="citizen-card" style="text-align: center; min-height: 200px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+            <h3 style="margin-bottom: 0.75rem;">Submit Feedback</h3>
+            <p style="font-size: 0.95rem; line-height: 1.5;">
+                Report issues, share concerns, or suggest improvements for your community.
+            </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Submit Now →", key="home_submit"):
+        if st.button("Submit Now →", key="home_submit", use_container_width=True):
             st.session_state.nav_to = "submit"
             st.rerun()
     
     with col2:
         st.markdown("""
-        <div class="citizen-card">
-            <h3>🔍 Track Status</h3>
-            <p>Check the status of your previously submitted feedback and get updates.</p>
+        <div class="citizen-card" style="text-align: center; min-height: 200px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+            <h3 style="margin-bottom: 0.75rem;">Track Status</h3>
+            <p style="font-size: 0.95rem; line-height: 1.5;">
+                Check the status of your previously submitted feedback and get updates.
+            </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Track Now →", key="home_track"):
+        if st.button("Track Now →", key="home_track", use_container_width=True):
             st.session_state.nav_to = "track"
             st.rerun()
     
     with col3:
         st.markdown("""
-        <div class="citizen-card">
-            <h3>📢 Announcements</h3>
-            <p>View public updates, resolved issues, and community improvements.</p>
+        <div class="citizen-card" style="text-align: center; min-height: 200px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📢</div>
+            <h3 style="margin-bottom: 0.75rem;">Announcements</h3>
+            <p style="font-size: 0.95rem; line-height: 1.5;">
+                View public updates, resolved issues, and community improvements.
+            </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("View Updates →", key="home_announce"):
+        if st.button("View Updates →", key="home_announce", use_container_width=True):
             st.session_state.nav_to = "announce"
             st.rerun()
     
     st.divider()
     
-    # Statistics
-    st.subheader("📊 Community Impact")
+    # Premium Statistics Section
+    st.markdown("""
+    <h2 style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #e2e8f0; 
+               text-align: center; margin-bottom: 1.5rem;">
+        📊 Community Impact Dashboard
+    </h2>
+    """, unsafe_allow_html=True)
+    
     df = st.session_state.data_manager.get_feedback_dataframe()
     
     col1, col2, col3, col4 = st.columns(4)
@@ -172,34 +979,67 @@ def render_home_page():
     in_progress = len(df[df['status'] == 'In Progress']) if not df.empty and 'status' in df else 0
     
     with col1:
-        st.metric("📬 Total Submissions", total)
+        st.markdown("""
+        <div style="background: rgba(59, 130, 246, 0.1); border-radius: 16px; padding: 1.5rem; 
+                    text-align: center; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div style="font-size: 2rem;">📬</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.metric("Total Submissions", total)
     with col2:
-        st.metric("✅ Issues Resolved", resolved)
+        st.markdown("""
+        <div style="background: rgba(16, 185, 129, 0.1); border-radius: 16px; padding: 1.5rem; 
+                    text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div style="font-size: 2rem;">✅</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.metric("Issues Resolved", resolved)
     with col3:
-        st.metric("🔄 In Progress", in_progress)
+        st.markdown("""
+        <div style="background: rgba(245, 158, 11, 0.1); border-radius: 16px; padding: 1.5rem; 
+                    text-align: center; border: 1px solid rgba(245, 158, 11, 0.2);">
+            <div style="font-size: 2rem;">🔄</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.metric("In Progress", in_progress)
     with col4:
         resolution_rate = (resolved / total * 100) if total > 0 else 0
-        st.metric("📈 Resolution Rate", f"{resolution_rate:.0f}%")
+        st.markdown("""
+        <div style="background: rgba(139, 92, 246, 0.1); border-radius: 16px; padding: 1.5rem; 
+                    text-align: center; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <div style="font-size: 2rem;">📈</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.metric("Resolution Rate", f"{resolution_rate:.0f}%")
     
     # Recent resolved issues (public)
     st.divider()
-    st.subheader("✅ Recently Resolved Issues")
+    st.markdown("""
+    <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #34d399; 
+               margin-bottom: 1rem;">
+        ✅ Recently Resolved Issues
+    </h3>
+    """, unsafe_allow_html=True)
     
     if not df.empty and 'status' in df.columns:
         resolved_df = df[df['status'] == 'Resolved'].head(5)
         if not resolved_df.empty:
             for _, row in resolved_df.iterrows():
-                with st.container():
-                    st.markdown(f"""
-                    <div class="info-box">
-                        <strong>✅ {row.get('title', 'Untitled')}</strong><br>
-                        <small>Category: {row.get('category', 'N/A')} | Resolved on: {row.get('updated_at', row.get('timestamp', 'N/A'))[:10] if row.get('updated_at') or row.get('timestamp') else 'N/A'}</small>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: rgba(16, 185, 129, 0.08); border-radius: 12px; padding: 1rem;
+                            border-left: 4px solid #10b981; margin-bottom: 0.75rem;
+                            border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <strong style="color: #34d399;">✅ {row.get('title', 'Untitled')}</strong><br>
+                    <small style="color: rgba(148, 163, 184, 0.8);">
+                        Category: {row.get('category', 'N/A')} | 
+                        Resolved: {row.get('updated_at', row.get('timestamp', 'N/A'))[:10] if row.get('updated_at') or row.get('timestamp') else 'N/A'}
+                    </small>
+                </div>
+                """, unsafe_allow_html=True)
         else:
-            st.info("No resolved issues to display yet.")
+            st.info("🎉 No resolved issues to display yet. Be the first to submit feedback!")
     else:
-        st.info("No feedback data available yet. Be the first to submit!")
+        st.info("📭 No feedback data available yet. Be the first to submit!")
 
 
 def render_submit_page():
