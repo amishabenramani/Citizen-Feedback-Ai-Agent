@@ -9,6 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import hashlib
+from streamlit_option_menu import option_menu
 
 from src.feedback_analyzer import FeedbackAnalyzer
 from src.data_manager import DataManager
@@ -22,376 +23,239 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Premium CSS for Admin Portal (Dark Professional Theme with Glassmorphism)
+# Premium CSS for Admin Portal (Light theme aligned with Citizen Portal)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap');
-    
-    /* ========== REMOVE ALL STREAMLIT DEFAULT SPACING ========== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    :root {
+        --surface: #ffffff;
+        --surface-muted: #f8fafc;
+        --border: #e5e7eb;
+        --text-strong: #1f2937;
+        --text: #374151;
+        --muted: #9ca3af;
+        --purple: #7c3aed;
+        --purple-strong: #6d28d9;
+        --purple-soft: #ede9fe;
+    }
+
     #MainMenu, footer, header,
     [data-testid="stHeader"],
     [data-testid="stToolbar"],
     [data-testid="stDecoration"] {
         display: none !important;
-        height: 0 !important;
-        min-height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        visibility: hidden !important;
     }
-    
-    /* Root app container - zero top spacing */
+
     .stApp {
-        background: #ffffff;
+        background: var(--surface-muted);
         min-height: 100vh;
-        margin-top: 0 !important;
-        padding-top: 0 !important;
     }
-    
-    /* App view container */
-    [data-testid="stAppViewContainer"] {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
+
     [data-testid="stAppViewContainer"] > .main {
         padding-top: 0 !important;
-        margin-top: 0 !important;
     }
-    
-    /* Main content block container */
+
     .main .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        margin-top: 0 !important;
-        max-width: 100% !important;
+        padding: 1.5rem 2rem !important;
+        max-width: 1200px;
     }
-    
-    /* First element in main content - no extra spacing */
-    .main .block-container > div:first-child,
-    .main [data-testid="stVerticalBlock"] > div:first-child {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-strong) !important;
+        font-family: 'Poppins', sans-serif !important;
     }
-    
-    /* ========== SIDEBAR - ZERO TOP SPACING ========== */
-    [data-testid="stSidebar"] {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        padding-top: 0 !important;
-        gap: 0 !important;
-    }
-    
-    [data-testid="stSidebar"] .block-container {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
-    /* Sidebar content starts at top */
-    section[data-testid="stSidebar"] > div {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }
-    
-    /* ========== PREMIUM STYLING ========== */
-    
-    /* Premium Header Styling */
+
     .main-header {
         font-family: 'Poppins', sans-serif;
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-align: center;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.5px;
+        color: var(--purple-strong);
+        margin-bottom: 0.35rem;
+        letter-spacing: -0.4px;
     }
-    
+
     .sub-header {
         font-family: 'Inter', sans-serif;
-        font-size: 1.1rem;
-        color: rgba(148, 163, 184, 0.85);
-        text-align: center;
-        margin-bottom: 2rem;
+        font-size: 1rem;
+        color: #6b7280;
+        margin-bottom: 1.1rem;
     }
-    
-    /* Admin Card with Glassmorphism */
+
+    .stMarkdown, .stMarkdown p, .stMarkdown li {
+        color: var(--text) !important;
+    }
+
+    /* Sidebar shell */
+    [data-testid="stSidebar"] {
+        background: #ffffff !important;
+        border-right: 1px solid var(--border);
+        padding: 0 !important;
+        width: 260px !important;
+    }
+
+    [data-testid="stSidebar"] > div:first-child {
+        padding: 0 !important;
+    }
+
+    [data-testid="stSidebar"] .block-container {
+        padding: 0 !important;
+    }
+
+    /* Sidebar header */
+    .admin-sidebar-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+        padding: 22px 20px 18px;
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.18);
+        color: #ffffff;
+    }
+
+    .admin-sidebar-header h2 {
+        margin: 4px 0 0 0;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .admin-sidebar-header .subtitle {
+        margin: 2px 0 0 0;
+        color: rgba(255,255,255,0.85);
+        font-size: 13px;
+    }
+
+    /* Option menu tweaks */
+    .nav-link {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        margin: 4px 12px !important;
+        padding: 12px 14px !important;
+        border: 1px solid #f1f1f6 !important;
+        color: #4b5563 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        transition: all 0.18s ease !important;
+    }
+
+    .nav-link:hover {
+        background: #f5f3ff !important;
+        border-color: #ddd6fe !important;
+        transform: translateX(4px);
+        color: var(--purple) !important;
+        box-shadow: 0 3px 10px rgba(124, 58, 237, 0.12) !important;
+    }
+
+    .nav-link-selected {
+        background: linear-gradient(135deg, #ede9fe 0%, #f6f4ff 100%) !important;
+        border-color: #c4b5fd !important;
+        color: var(--purple-strong) !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.16) !important;
+    }
+
+    .sidebar-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 10px 14px;
+    }
+
+    /* Cards */
     .admin-card {
-        background: rgba(139, 92, 246, 0.08);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 1.75rem;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        margin-bottom: 1rem;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .admin-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(139, 92, 246, 0.2);
-        border-color: rgba(139, 92, 246, 0.4);
-    }
-    
-    /* Priority Cards with Glow Effects */
-    .priority-critical {
-        background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(185, 28, 28, 0.1) 100%);
-        border: 1px solid rgba(220, 38, 38, 0.3);
-        box-shadow: 0 0 20px rgba(220, 38, 38, 0.15);
-    }
-    
-    .priority-high {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
-    }
-    
-    .priority-normal {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.08) 100%);
-        border: 1px solid rgba(59, 130, 246, 0.25);
-    }
-    
-    .priority-low {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.08) 100%);
-        border: 1px solid rgba(16, 185, 129, 0.25);
-    }
-    
-    /* Premium Metric Cards */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(20px);
-        border-radius: 16px;
-        padding: 1.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(139, 92, 246, 0.3);
-    }
-    
-    /* Alert Boxes Premium */
-    .alert-box {
-        background: linear-gradient(135deg, rgba(220, 38, 38, 0.12) 0%, rgba(185, 28, 28, 0.08) 100%);
-        border: 1px solid rgba(220, 38, 38, 0.25);
-        border-radius: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
         padding: 1.25rem;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
     }
-    
-    .alert-box h4 {
-        color: #f87171;
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
+
+    .priority-critical { background: #fef2f2; border: 1px solid #fecdd3; }
+    .priority-high { background: #fffbeb; border: 1px solid #fde68a; }
+    .priority-normal { background: #eef2ff; border: 1px solid #c7d2fe; }
+    .priority-low { background: #ecfdf3; border: 1px solid #bbf7d0; }
+
+    /* Buttons */
+    .stButton > button[kind="primary"], .stDownloadButton > button {
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.24) !important;
+        font-weight: 600 !important;
     }
-    
-    .success-box {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%);
-        border: 1px solid rgba(16, 185, 129, 0.25);
-        border-radius: 16px;
-        padding: 1.25rem;
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Premium Button Styling */
-    .stButton > button {
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        border-radius: 12px;
-        padding: 0.7rem 1.75rem;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-        border: none;
-    }
-    
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-    }
-    
-    .stButton > button[kind="primary"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-    }
-    
+
     .stButton > button[kind="secondary"] {
-        background: rgba(255, 255, 255, 0.08);
-        color: #e2e8f0;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
+        background: #f3f4f6 !important;
+        color: #4b5563 !important;
+        border-radius: 10px !important;
     }
-    
-    .stButton > button[kind="secondary"]:hover {
-        background: rgba(255, 255, 255, 0.12);
-        transform: translateY(-2px);
+
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-1px);
     }
-    
-    /* Form Inputs Premium */
+
+    /* Inputs */
     .stTextInput > div > div > input,
     .stTextArea > div > div > textarea,
     .stSelectbox > div > div > div,
     .stMultiSelect > div > div > div {
-        background: rgba(15, 15, 26, 0.8) !important;
-        border: 1px solid rgba(139, 92, 246, 0.25) !important;
-        border-radius: 12px !important;
-        color: #e2e8f0 !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        color: var(--text-strong) !important;
         font-family: 'Inter', sans-serif !important;
-        transition: all 0.3s ease !important;
     }
-    
+
     .stTextInput > div > div > input:focus,
     .stTextArea > div > div > textarea:focus {
-        border-color: #8b5cf6 !important;
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2) !important;
+        border-color: var(--purple) !important;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
     }
-    
-    /* Metrics Premium Styling */
-    [data-testid="stMetricValue"] {
-        font-family: 'Poppins', sans-serif;
-        font-size: 2.2rem !important;
-        font-weight: 700;
-        color: #a78bfa !important;
-    }
-    
-    [data-testid="stMetricLabel"] {
-        color: rgba(148, 163, 184, 0.9) !important;
-        font-family: 'Inter', sans-serif;
-        font-size: 0.9rem !important;
-    }
-    
-    [data-testid="stMetricDelta"] svg {
-        stroke: currentColor !important;
-    }
-    
-    /* Expander Premium Style */
+
+    /* Expanders */
     .streamlit-expanderHeader {
-        background: rgba(139, 92, 246, 0.1) !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border) !important;
         border-radius: 12px !important;
-        border: 1px solid rgba(139, 92, 246, 0.2) !important;
-        color: #a78bfa !important;
-        font-family: 'Poppins', sans-serif !important;
+        color: var(--text-strong) !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
     }
-    
-    .streamlit-expanderHeader:hover {
-        background: rgba(139, 92, 246, 0.15) !important;
-        border-color: rgba(139, 92, 246, 0.35) !important;
-    }
-    
+
     .streamlit-expanderContent {
-        background: rgba(15, 15, 26, 0.6) !important;
-        border: 1px solid rgba(139, 92, 246, 0.15) !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border) !important;
         border-top: none !important;
         border-radius: 0 0 12px 12px !important;
-        backdrop-filter: blur(10px);
     }
-    
-    /* Sidebar Premium Styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, rgba(15, 15, 26, 0.98) 0%, rgba(26, 26, 46, 0.95) 100%);
-        border-right: 1px solid rgba(139, 92, 246, 0.15);
-    }
-    
-    /* Dataframe Premium */
-    .stDataFrame {
-        background: rgba(15, 15, 26, 0.5);
-        border-radius: 12px;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-    }
-    
-    /* Plotly Charts Background */
-    .js-plotly-plot .plotly .main-svg {
-        background: transparent !important;
-    }
-    
-    /* Tabs Premium */
+
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background: rgba(15, 15, 26, 0.6);
-        border-radius: 16px;
-        padding: 8px;
-        border: 1px solid rgba(139, 92, 246, 0.15);
+        gap: 6px;
+        background: #f3f4f6;
+        border-radius: 14px;
+        padding: 6px;
     }
-    
+
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        border-radius: 12px;
-        color: rgba(148, 163, 184, 0.8);
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        color: #6b7280;
     }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(139, 92, 246, 0.1);
-        color: #a78bfa;
-    }
-    
+
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.15)) !important;
-        color: #a78bfa !important;
-        border: 1px solid rgba(139, 92, 246, 0.3);
+        background: #ffffff !important;
+        color: var(--purple) !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-    
-    /* Divider */
+
+    /* Alerts */
+    .stSuccess { background: #ecfdf5 !important; color: #047857 !important; }
+    .stInfo { background: #eff6ff !important; color: #1d4ed8 !important; }
+    .stWarning { background: #fffbeb !important; color: #92400e !important; }
+    .stError { background: #fef2f2 !important; color: #991b1b !important; }
+
     hr {
         border: none;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
-        margin: 2rem 0;
-    }
-    
-    /* Text Colors */
-    .stMarkdown, .stMarkdown p, .stMarkdown li {
-        color: rgba(203, 213, 225, 0.9) !important;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        color: #e2e8f0 !important;
-        font-family: 'Poppins', sans-serif !important;
-    }
-    
-    /* Download button */
-    .stDownloadButton > button {
-        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-    }
-    
-    .stDownloadButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
-    }
-    
-    /* Alerts */
-    .stSuccess, .stInfo, .stWarning, .stError {
-        background: rgba(15, 15, 26, 0.7) !important;
-        border-radius: 12px !important;
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Caption */
-    .stCaption {
-        color: rgba(148, 163, 184, 0.7) !important;
+        background: linear-gradient(90deg, transparent, rgba(124,58,237,0.35), transparent);
+        margin: 1.75rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -421,80 +285,63 @@ def init_session_state():
 def render_login():
     """Render clean centered admin login page."""
     
-    # Full page centered CSS
+    # Full page centered CSS (light, aligned to citizen theme)
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
-    
-    .stApp { background: #f5f7fa !important; }
-    
-    /* FORCE ALL TEXT TO BLUE */
-    h1, h2, h3, p, span, label, div { color: #0033cc !important; }
-    .stMarkdown h1, .stMarkdown p { color: #0033cc !important; }
-    
-    /* Remove ALL top margins and padding */
+
+    .stApp { background: #f8fafc !important; }
+
     .main .block-container { 
         padding: 0 !important; 
         max-width: 100% !important;
         margin: 0 !important;
     }
-    header { display: none !important; }
-    #MainMenu { display: none !important; }
-    footer { display: none !important; }
-    section[data-testid="stSidebar"] { display: none !important; }
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
+    header, #MainMenu, footer, [data-testid="stHeader"], [data-testid="stToolbar"], section[data-testid="stSidebar"] { display: none !important; }
     .stDeployButton { display: none !important; }
-    
-    /* Center the entire content vertically */
+
     .main > div { 
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         min-height: 100vh !important;
     }
-    
-    /* Input styling */
+
     .stTextInput > div > div > input {
         background: #ffffff !important;
-        border: 1.5px solid #d1d5db !important;
-        border-radius: 8px !important;
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 10px !important;
         padding: 12px 14px !important;
         font-size: 14px !important;
-        color: #1e40af !important;
+        color: #1f2937 !important;
     }
     .stTextInput > div > div > input:focus {
-        border-color: #2563eb !important;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
     }
-    
-    /* Button styling */
+
     .stButton > button {
-        background: linear-gradient(135deg, #0066cc 0%, #0099ff 100%) !important;
+        background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;
         color: white !important;
         border: none !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         padding: 12px 20px !important;
         font-size: 14px !important;
         font-weight: 600 !important;
-        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4) !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
     }
     .stButton > button:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 16px rgba(0, 102, 204, 0.5) !important;
     }
-    
-    /* Checkbox */
-    .stCheckbox label { color: #1e40af !important; font-size: 13px !important; }
-    
-    /* Form container */
+
     [data-testid="stForm"] {
         background: #ffffff;
         border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 24px;
-        max-width: 400px;
+        border-radius: 14px;
+        padding: 26px;
+        max-width: 420px;
         margin: 0 auto;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -506,28 +353,28 @@ def render_login():
         # Brand Logo - using stronger color enforcement
         st.markdown("""
         <div style="text-align: center; margin-bottom: 24px;">
-            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #0066cc, #0099ff); 
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #7c3aed, #8b5cf6); 
                         border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;
-                        box-shadow: 0 4px 14px rgba(0, 102, 204, 0.4); margin-bottom: 16px;">
+                        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35); margin-bottom: 16px;">
                 <span style="font-size: 28px;">🏛️</span>
             </div>
             <h1 style="font-family: Poppins, sans-serif; font-size: 24px; font-weight: 700; 
-                       color: #0033cc;">Admin Login</h1>
-            <p style="font-size: 14px; color: #0055aa; font-weight: 500;">
+                       color: #7c3aed;">Admin Login</h1>
+            <p style="font-size: 14px; color: #6b21a8; font-weight: 500;">
                 Sign in to access the dashboard</p>
         </div>
         <style>
-            .stMarkdown h1 { color: #0033cc !important; }
-            .stMarkdown p { color: #0055aa !important; }
+            .stMarkdown h1 { color: #7c3aed !important; }
+            .stMarkdown p { color: #6b21a8 !important; }
         </style>
         """, unsafe_allow_html=True)
         
         # Login Form
         with st.form("login_form", clear_on_submit=False):
-            st.markdown('<p style="font-size: 13px; font-weight: 600; color: #0033cc; margin-bottom: 6px;">Username</p>', unsafe_allow_html=True)
+            st.markdown('<p style="font-size: 13px; font-weight: 600; color: #7c3aed; margin-bottom: 6px;">Username</p>', unsafe_allow_html=True)
             username = st.text_input("username", placeholder="Enter username", label_visibility="collapsed")
             
-            st.markdown('<p style="font-size: 13px; font-weight: 600; color: #0033cc; margin: 12px 0 6px 0;">Password</p>', unsafe_allow_html=True)
+            st.markdown('<p style="font-size: 13px; font-weight: 600; color: #7c3aed; margin: 12px 0 6px 0;">Password</p>', unsafe_allow_html=True)
             password = st.text_input("password", type="password", placeholder="Enter password", label_visibility="collapsed")
             
             st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
@@ -562,86 +409,97 @@ def render_login():
 
 def render_sidebar():
     """Render premium admin sidebar."""
+    if 'admin_page' not in st.session_state:
+        st.session_state.admin_page = "Dashboard"
+
     with st.sidebar:
-        # Premium Logo Section
-        username = st.session_state.admin_username
+        username = st.session_state.admin_username or "Admin"
+
         st.markdown(f"""
-        <div style="text-align: center; padding: 1.5rem 0;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.5rem; 
-                        filter: drop-shadow(0 4px 20px rgba(139, 92, 246, 0.5));">⚙️</div>
-            <h2 style="font-family: 'Poppins', sans-serif; font-weight: 700; 
-                       background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                       margin: 0;">Admin Portal</h2>
-            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.15));
-                        border-radius: 20px; padding: 0.4rem 1rem; margin-top: 0.75rem;
-                        display: inline-block; border: 1px solid rgba(139, 92, 246, 0.3);">
-                <span style="color: #a78bfa; font-size: 0.85rem; font-family: 'Inter', sans-serif;">
-                    👤 {username}
-                </span>
+        <div class="admin-sidebar-header">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:46px; height:46px; border-radius:12px; background: rgba(255,255,255,0.18);
+                            display:flex; align-items:center; justify-content:center; font-size:24px;">
+                    ⚙️
+                </div>
+                <div>
+                    <h2>Admin Portal</h2>
+                    <div class="subtitle">Signed in as {username}</div>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.divider()
-        
-        page = st.radio(
-            "Navigate",
-            [
-                "📊 Dashboard",
-                "📋 All Feedback",
-                "🚨 Priority Queue",
-                "👥 Assignments",
-                "📈 Analytics",
-                "📤 Export Data",
-                "⚙️ Settings"
-            ],
-            label_visibility="collapsed"
+
+        menu_options = [
+            "Dashboard",
+            "All Feedback",
+            "Priority Queue",
+            "Assignments",
+            "Analytics",
+            "Export Data",
+            "Settings",
+        ]
+
+        icons = [
+            "speedometer2",
+            "card-checklist",
+            "exclamation-triangle-fill",
+            "people",
+            "bar-chart-line",
+            "box-arrow-down",
+            "gear",
+        ]
+
+        default_index = menu_options.index(st.session_state.admin_page) if st.session_state.admin_page in menu_options else 0
+        selected = option_menu(
+            menu_title=None,
+            options=menu_options,
+            icons=icons,
+            default_index=default_index,
+            styles={
+                "container": {"padding": "12px 0 8px 0"},
+                "icon": {"color": "#2563eb", "font-size": "18px"},
+                "nav-link": {"text-align": "left", "font-weight": "600", "font-size": "14px"},
+                "nav-link-selected": {"font-weight": "700", "color": "#2563eb"},
+            },
         )
-        
-        st.divider()
-        
-        # Quick stats with premium styling
+        st.session_state.admin_page = selected
+
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
         df = st.session_state.data_manager.get_feedback_dataframe()
         if not df.empty:
             new_count = len(df[df['status'] == 'New']) if 'status' in df else 0
             urgent_count = len(df[df['urgency'].isin(['High', 'Emergency'])]) if 'urgency' in df else 0
-            
+
             if new_count > 0:
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1));
-                            border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
-                            border: 1px solid rgba(59, 130, 246, 0.25);">
-                    <span style="color: #60a5fa; font-weight: 600;">🆕 {new_count} new submissions</span>
+                <div style="background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; padding:0.75rem 1rem; margin:0 14px 0.6rem 14px;">
+                    <span style="color:#1d4ed8; font-weight:600;">🆕 {new_count} new submissions</span>
                 </div>
                 """, unsafe_allow_html=True)
-            
+
             if urgent_count > 0:
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(185, 28, 28, 0.1));
-                            border-radius: 12px; padding: 0.75rem 1rem;
-                            border: 1px solid rgba(220, 38, 38, 0.25);">
-                    <span style="color: #f87171; font-weight: 600;">🚨 {urgent_count} urgent items</span>
+                <div style="background:#fef2f2; border:1px solid #fecdd3; border-radius:12px; padding:0.75rem 1rem; margin:0 14px 0.6rem 14px;">
+                    <span style="color:#b91c1c; font-weight:600;">🚨 {urgent_count} urgent items</span>
                 </div>
                 """, unsafe_allow_html=True)
-        
-        st.divider()
-        
-        if st.button("🚪 Sign Out", use_container_width=True, type="secondary"):
+
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
+        if st.button("🚪 Sign Out", type="secondary", key="signout", disabled=False, help="Sign out", use_container_width=True):
             st.session_state.admin_logged_in = False
             st.session_state.admin_username = None
             st.rerun()
-        
-        # Footer
+
         st.markdown("""
-        <div style="text-align: center; padding: 1rem 0; margin-top: 1rem;">
-            <p style="color: rgba(148, 163, 184, 0.5); font-size: 0.75rem; margin: 0;">
-                Admin Portal v2.0
-            </p>
+        <div style="text-align:center; padding: 12px 0 16px 0;">
+            <p style="color:#9ca3af; font-size:12px; margin:0;">Admin Portal v2.0</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        return page
+
+        return selected
 
 
 def render_dashboard():
@@ -1256,35 +1114,22 @@ def main():
         """, unsafe_allow_html=True)
         render_login()
         return
-    
-    # Apply dark theme for dashboard after login
-    st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%) !important;
-    }
-    .main .block-container {
-        padding-top: 2rem !important;
-        max-width: 1600px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
+
     page = render_sidebar()
     
-    if page == "📊 Dashboard":
+    if page == "Dashboard":
         render_dashboard()
-    elif page == "📋 All Feedback":
+    elif page == "All Feedback":
         render_all_feedback()
-    elif page == "🚨 Priority Queue":
+    elif page == "Priority Queue":
         render_priority_queue()
-    elif page == "👥 Assignments":
+    elif page == "Assignments":
         render_assignments()
-    elif page == "📈 Analytics":
+    elif page == "Analytics":
         render_analytics()
-    elif page == "📤 Export Data":
+    elif page == "Export Data":
         render_export()
-    elif page == "⚙️ Settings":
+    elif page == "Settings":
         render_settings()
 
 

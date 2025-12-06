@@ -357,7 +357,6 @@ class Dashboard:
         
         fig.update_layout(
             **self.chart_layout,
-            height=280,
             xaxis=dict(
                 title="Date",
                 tickfont=dict(color='rgba(148, 163, 184, 0.8)'),
@@ -407,7 +406,6 @@ class Dashboard:
         
         fig.update_layout(
             **self.chart_layout,
-            height=400,
             xaxis=dict(
                 title="Sentiment",
                 tickfont=dict(color='rgba(148, 163, 184, 0.9)'),

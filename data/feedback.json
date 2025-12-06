@@ -20,5 +20,33 @@
     "summary": "General feedback: too much road demage in surat",
     "status": "Resolved",
     "updated_at": "2025-12-04T14:51:00.252836"
+  },
+  {
+    "id": "24ED36FE",
+    "timestamp": "2025-12-06T13:59:01.699953",
+    "name": "Amisha ramani",
+    "email": "amishabenramani@gmail.com",
+    "phone": "+919033018682",
+    "feedback_type": "💡 Suggestion",
+    "category": "💧 Water & Sewage",
+    "urgency": "High",
+    "area": "Gujarat",
+    "address": "surat",
+    "location": "Gujarat, surat",
+    "title": "water suggestion",
+    "feedback": "njghghjlm kljkjlk klk,",
+    "sentiment": "Neutral",
+    "sentiment_score": 0.0,
+    "keywords": [
+      "njghghjlm",
+      "kljkjlk",
+      "klk"
+    ],
+    "summary": "General feedback: njghghjlm kljkjlk klk,",
+    "status": "In Progress",
+    "admin_notes": "jfjefnkdsn",
+    "assigned_to": "municipal",
+    "priority": "High",
+    "updated_at": "2025-12-06T14:02:31.956461"
   }
 ]
