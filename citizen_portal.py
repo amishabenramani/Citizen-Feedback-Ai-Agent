@@ -873,6 +873,21 @@ def render_sidebar():
         "Help & FAQs": "❓ Help & FAQs"
     }
     
+    # Check if navigation was triggered from home page buttons
+    if 'nav_to' in st.session_state and st.session_state.nav_to:
+        nav_target = st.session_state.nav_to
+        st.session_state.nav_to = None  # Clear the navigation trigger
+        
+        # Map nav_to values to page names
+        nav_mapping = {
+            "submit": "📝 Submit Feedback",
+            "track": "🔍 Track My Feedback",
+            "announce": "📢 Public Announcements"
+        }
+        
+        if nav_target in nav_mapping:
+            return nav_mapping[nav_target]
+    
     # Update session state
     key_mapping = {
         "Home": "home",

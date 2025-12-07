@@ -156,6 +156,7 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "streamlit" },
+    { name = "streamlit-option-menu" },
 ]
 
 [package.dev-dependencies]
@@ -168,6 +169,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "plotly", specifier = ">=5.18.0" },
     { name = "streamlit", specifier = ">=1.28.0" },
+    { name = "streamlit-option-menu", specifier = ">=0.3.6" },
 ]
 
 [package.metadata.requires-dev]
@@ -1053,6 +1055,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e5/be/89ee065e06597bf12bff0c76299fabd255971c882c1d572a8819dc1510bf/streamlit-1.52.0.tar.gz", hash = "sha256:572095458fbd68587776f4d39d7f89dcb4a54c0ee43572713026bd9963580af8", size = 8578948, upload-time = "2025-12-04T00:18:17.354Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/11/44/284b6c3b96d5705fafd6f75cffab4cbe047f836e6f0cf55916e044c92058/streamlit-1.52.0-py3-none-any.whl", hash = "sha256:ef59133890a3b0aa45674d54b258170cf56bcc4ab65a1b930fa7671a45fa760a", size = 9024661, upload-time = "2025-12-04T00:18:14.637Z" },
+]
+
+[[package]]
+name = "streamlit-option-menu"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5e/27/72dc451cdaef1714fd0d75cc430e50a06c12c9046295fdf1f94af1b766eb/streamlit-option-menu-0.4.0.tar.gz", hash = "sha256:48ec69d59e547fa2fa4bfae001620df8af56a80de2f765ddbb9fcbfb84017129", size = 827290, upload-time = "2024-10-09T14:51:01.685Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/52/2f525ad4262dc83d67297f69ec5afcee1438b9e9ae22aa318396725ddbed/streamlit_option_menu-0.4.0-py3-none-any.whl", hash = "sha256:a55fc7554047b6db371595af2182e435b8a2c715ee6124e8543685bd4670b07e", size = 829255, upload-time = "2024-10-09T14:50:59.707Z" },
 ]
 
 [[package]]

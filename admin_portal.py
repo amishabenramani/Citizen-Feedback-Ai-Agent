@@ -93,14 +93,30 @@ st.markdown("""
         border-right: 1px solid var(--border);
         padding: 0 !important;
         width: 260px !important;
+        display: block !important;
+        visibility: visible !important;
+        transform: none !important;
+        margin-left: 0 !important;
     }
 
     [data-testid="stSidebar"] > div:first-child {
         padding: 0 !important;
+        display: block !important;
     }
 
     [data-testid="stSidebar"] .block-container {
         padding: 0 !important;
+    }
+
+    /* Force sidebar to always be visible */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Hide collapse button if needed */
+    button[kind="header"] {
+        display: none !important;
     }
 
     /* Sidebar header */
@@ -155,6 +171,27 @@ st.markdown("""
         height: 1px;
         background: var(--border);
         margin: 10px 14px;
+    }
+
+    /* Ensure option-menu container is visible */
+    [data-testid="stSidebar"] nav,
+    [data-testid="stSidebar"] .nav-link,
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stSidebar"] .st-emotion-cache-16txtl3,
+    [data-testid="stSidebar"] .st-emotion-cache-1gulkj5,
+    [data-testid="stSidebar"] > div > div {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Make all sidebar content visible */
+    [data-testid="stSidebar"] * {
+        visibility: visible !important;
     }
 
     /* Cards */
@@ -451,40 +488,34 @@ def render_sidebar():
         ]
 
         default_index = menu_options.index(st.session_state.admin_page) if st.session_state.admin_page in menu_options else 0
+        
         selected = option_menu(
             menu_title=None,
             options=menu_options,
             icons=icons,
             default_index=default_index,
+            key="admin_nav_menu",
             styles={
-                "container": {"padding": "12px 0 8px 0"},
+                "container": {"padding": "12px 0 8px 0", "background-color": "transparent"},
                 "icon": {"color": "#2563eb", "font-size": "18px"},
-                "nav-link": {"text-align": "left", "font-weight": "600", "font-size": "14px"},
-                "nav-link-selected": {"font-weight": "700", "color": "#2563eb"},
+                "nav-link": {
+                    "text-align": "left", 
+                    "font-weight": "600", 
+                    "font-size": "14px",
+                    "background-color": "#ffffff",
+                    "color": "#4b5563",
+                    "border-radius": "12px",
+                    "margin": "4px 12px",
+                    "padding": "12px 14px",
+                },
+                "nav-link-selected": {
+                    "font-weight": "700", 
+                    "color": "#2563eb",
+                    "background-color": "#ede9fe",
+                },
             },
         )
         st.session_state.admin_page = selected
-
-        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-
-        df = st.session_state.data_manager.get_feedback_dataframe()
-        if not df.empty:
-            new_count = len(df[df['status'] == 'New']) if 'status' in df else 0
-            urgent_count = len(df[df['urgency'].isin(['High', 'Emergency'])]) if 'urgency' in df else 0
-
-            if new_count > 0:
-                st.markdown(f"""
-                <div style="background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; padding:0.75rem 1rem; margin:0 14px 0.6rem 14px;">
-                    <span style="color:#1d4ed8; font-weight:600;">🆕 {new_count} new submissions</span>
-                </div>
-                """, unsafe_allow_html=True)
-
-            if urgent_count > 0:
-                st.markdown(f"""
-                <div style="background:#fef2f2; border:1px solid #fecdd3; border-radius:12px; padding:0.75rem 1rem; margin:0 14px 0.6rem 14px;">
-                    <span style="color:#b91c1c; font-weight:600;">🚨 {urgent_count} urgent items</span>
-                </div>
-                """, unsafe_allow_html=True)
 
         st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
