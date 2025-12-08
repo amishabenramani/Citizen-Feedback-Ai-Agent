@@ -1046,7 +1046,8 @@ def render_home_page():
                             border: 1px solid rgba(16, 185, 129, 0.2);">
                     <strong style="color: #34d399;">✅ {row.get('title', 'Untitled')}</strong><br>
                     <small style="color: rgba(148, 163, 184, 0.8);">
-                        Category: {row.get('category', 'N/A')} | 
+                        Category: {row.get('category', 'N/A')} |
+                        Location: {row.get('location', 'N/A')} |
                         Resolved: {row.get('updated_at', row.get('timestamp', 'N/A'))[:10] if row.get('updated_at') or row.get('timestamp') else 'N/A'}
                     </small>
                 </div>
