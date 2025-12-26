@@ -132,10 +132,23 @@ Automated email system that sends emails when:
 5. Use the same Gmail credential
 6. Click **"Save"**
 
-#### 2.5 Activate Workflow
-1. Click **"Save"** button (top right)
-2. Toggle the switch at top right from **"Inactive"** to **"Active"** ✅
-3. **Your first workflow is live!** 🎉
+#### 2.5 Configure CORS (Important for Browser Security)
+1. Click on the **Webhook** node
+2. In the node panel, scroll down and click **"Add Option"**
+3. Select **"Response Headers"**
+4. Add these headers (click "+ Add Header" for each):
+   - **Name**: `Access-Control-Allow-Origin` | **Value**: `*`
+   - **Name**: `Access-Control-Allow-Methods` | **Value**: `POST, OPTIONS`
+   - **Name**: `Access-Control-Allow-Headers` | **Value**: `Content-Type`
+5. Click outside the node to save
+
+#### 2.6 Activate Workflow (CRITICAL STEP!)
+1. Click **"Publish"** button (top right) to save your workflow first
+2. After publishing, look for the **toggle switch** in the top bar (near workflow name)
+3. Click the toggle to turn it from **"Inactive"** ❌ to **"Active"** ✅ (will turn green)
+4. **Your first workflow is now live!** 🎉
+
+⚠️ **IMPORTANT**: The workflow MUST be active for webhooks to work! If inactive, you'll get 404 errors.
 
 ---
 
@@ -209,10 +222,20 @@ Automated email system that sends emails when:
 5. Use Gmail credential
 6. Click **"Save"**
 
-#### 3.4 Activate Workflow
-1. Click **"Save"** (top right)
-2. Toggle to **"Active"** ✅
+#### 3.4 Configure CORS for Resolution Workflow
+1. Click on the **Webhook** node
+2. Scroll down → **"Add Option"** → **"Response Headers"**
+3. Add headers:
+   - `Access-Control-Allow-Origin`: `*`
+   - `Access-Control-Allow-Methods`: `POST, OPTIONS`
+   - `Access-Control-Allow-Headers`: `Content-Type`
+
+#### 3.5 Activate Workflow (CRITICAL!)
+1. Click **"Publish"** (top right)
+2. Toggle the switch to **"Active"** ✅ (will turn green)
 3. **Your second workflow is live!** 🎉
+
+⚠️ **Both workflows must be active for the system to work!**
 
 ---
 
@@ -281,10 +304,17 @@ curl -X POST https://your-webhook-url/feedback-submitted \
 ### Test with Real App:
 
 1. Make sure `data/n8n_config.json` has your webhook URL
-2. Go to Citizen Portal (http://localhost:8501)
-3. Submit a test feedback
-4. Check your email inbox
-5. If you got emails ✅ - **It's working!**
+2. **IMPORTANT: Activate both workflows in n8n** (toggle to green ✅)
+3. Go to Citizen Portal (http://localhost:8503)
+4. Submit a test feedback
+5. Check your email inbox
+6. If you got emails ✅ - **It's working!**
+
+**If no emails:**
+- ✅ Check both workflows are **Active** (green toggle in n8n)
+- ✅ Verify Gmail credentials are connected in both Gmail nodes
+- ✅ Check n8n Executions tab for errors
+- ✅ Look in spam folder
 
 ---
 

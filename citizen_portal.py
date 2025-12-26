@@ -10,6 +10,7 @@ from streamlit_option_menu import option_menu
 
 from src.feedback_analyzer import FeedbackAnalyzer
 from src.data_manager import DataManager
+from src.n8n_client import send_feedback_submitted
 
 # Page configuration
 st.set_page_config(
@@ -1185,6 +1186,12 @@ def render_submit_page():
                     # Save
                     st.session_state.data_manager.add_feedback(feedback_entry)
                     st.session_state.submitted_ids.append(tracking_id)
+
+                    # Send to n8n (if configured)
+                    try:
+                        send_feedback_submitted(feedback_entry)
+                    except Exception:
+                        pass
                     
                     # Success message
                     st.balloons()

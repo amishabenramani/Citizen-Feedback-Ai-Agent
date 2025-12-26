@@ -14,6 +14,7 @@ from streamlit_option_menu import option_menu
 from src.feedback_analyzer import FeedbackAnalyzer
 from src.data_manager import DataManager
 from src.dashboard import Dashboard
+from src.n8n_client import send_feedback_resolved
 
 # Page configuration
 st.set_page_config(
@@ -835,6 +836,14 @@ def render_all_feedback():
                         'admin_notes': notes
                     }
                     st.session_state.data_manager.update_feedback(row.get('id'), updates)
+                    # If resolved, notify n8n
+                    if new_status == 'Resolved':
+                        updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
+                        if updated:
+                            try:
+                                send_feedback_resolved(updated)
+                            except Exception:
+                                pass
                     st.success("✅ Changes saved!")
                     st.rerun()
                 
@@ -906,6 +915,13 @@ def render_priority_queue():
         with col3:
             if st.button("✅ Mark Resolved", key=f"resolve_{row.get('id')}"):
                 st.session_state.data_manager.update_status(row.get('id'), 'Resolved')
+                # Fetch updated entry and notify n8n
+                updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
+                if updated:
+                    try:
+                        send_feedback_resolved(updated)
+                    except Exception:
+                        pass
                 st.rerun()
         
         st.divider()
