@@ -1,3 +1,7 @@
 {
-  "webhook_base_url": "https://amisharamani.app.n8n.cloud/webhook"
+  "webhook_base_url": "https://amisharamani.app.n8n.cloud/webhook",
+  "endpoints": {
+    "feedback_submitted": "https://amisharamani.app.n8n.cloud/webhook/feedback-submitted",
+    "feedback_resolved": "https://amisharamani.app.n8n.cloud/webhook/feedback-resolved"
+  }
 }

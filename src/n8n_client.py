@@ -82,16 +82,43 @@ def _build_url(endpoint: str) -> Optional[str]:
 
 
 def _post(url: str, payload: Dict[str, Any]) -> bool:
-    """POST JSON to URL, return True on 2xx, False otherwise, with logging."""
+    """POST JSON to URL with proper headers, return True on 2xx, False otherwise, with logging."""
     try:
-        resp = requests.post(url, json=payload, timeout=10)
-        print(f"[n8n] Status: {resp.status_code}")
+        # Critical: Add proper headers for n8n webhook
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "CitizenFeedbackApp/1.0"
+        }
+        
+        print(f"[n8n] Sending to: {url}")
+        print(f"[n8n] Headers: {headers}")
+        print(f"[n8n] Payload: {json.dumps(payload, indent=2)}")
+        
+        resp = requests.post(url, json=payload, headers=headers, timeout=15)
+        
+        print(f"[n8n] Status Code: {resp.status_code}")
+        print(f"[n8n] Response Headers: {dict(resp.headers)}")
+        
         # Limit body size to avoid noisy logs
         body = resp.text if len(resp.text) <= 500 else resp.text[:500]
-        print(f"[n8n] Response: {body}")
-        return 200 <= resp.status_code < 300
+        print(f"[n8n] Response Body: {body}")
+        
+        if 200 <= resp.status_code < 300:
+            print(f"[n8n] ✅ SUCCESS: Webhook call successful")
+            return True
+        else:
+            print(f"[n8n] ❌ FAILED: HTTP {resp.status_code}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print(f"[n8n] ❌ ERROR: Request timeout after 15 seconds")
+        return False
+    except requests.exceptions.ConnectionError as e:
+        print(f"[n8n] ❌ ERROR: Connection failed - {e}")
+        return False
     except Exception as e:
-        print(f"[n8n] Error: {e}")
+        print(f"[n8n] ❌ ERROR: Unexpected error - {type(e).__name__}: {e}")
         return False
 
 
@@ -102,31 +129,45 @@ def send_feedback_submitted(entry: Dict[str, Any]) -> bool:
     """
     url = _build_url("feedback-submitted")
     if not url:
-        print("[n8n] No webhook URL configured")
+        print("[n8n] ❌ No webhook URL configured in data/n8n_config.json")
         return False
 
-    print(f"[n8n] Entry keys: {list(entry.keys())}")
-    print(f"[n8n] Sample data - name: {entry.get('citizen_name') or entry.get('name')}, email: {entry.get('citizen_email') or entry.get('email')}, id: {entry.get('feedback_id') or entry.get('id')}")
+    print(f"\n" + "="*60)
+    print(f"[n8n] 🚀 SENDING FEEDBACK TO n8n")
+    print(f"="*60)
+    print(f"[n8n] Entry keys received: {list(entry.keys())}")
 
     # Clean all text fields and use safe fallbacks for key names
+    # Map from your app fields (id, name, email) to n8n expected fields
+    citizen_email = _clean_text(entry.get("citizen_email") or entry.get("email") or "")
+    
     payload = {
-        "feedback_id": _clean_text(entry.get("feedback_id") or entry.get("id")),
-        "citizen_name": _clean_text(entry.get("citizen_name") or entry.get("name")),
-        "citizen_email": _clean_text(entry.get("citizen_email") or entry.get("email")),
-        "citizen_phone": _clean_text(entry.get("citizen_phone") or entry.get("phone")),
-        "category": _clean_text(entry.get("category")),
-        "title": _clean_text(entry.get("title")),
-        "feedback": _clean_text(entry.get("feedback")),
-        "location": _clean_text(entry.get("location")),
-        "urgency": _clean_text(entry.get("urgency")),
-        "timestamp": _clean_text(entry.get("timestamp")),
-        "status": _clean_text(entry.get("status", "New")),
-        "sentiment": _clean_text(entry.get("sentiment")),
+        "feedback_id": _clean_text(entry.get("feedback_id") or entry.get("id") or ""),
+        "citizen_name": _clean_text(entry.get("citizen_name") or entry.get("name") or ""),
+        "citizen_email": citizen_email,
+        "email": citizen_email,  # Send as both field names for compatibility
+        "citizen_phone": _clean_text(entry.get("citizen_phone") or entry.get("phone") or "N/A"),
+        "category": _clean_text(entry.get("category") or ""),
+        "title": _clean_text(entry.get("title") or ""),
+        "feedback": _clean_text(entry.get("feedback") or ""),
+        "location": _clean_text(entry.get("location") or entry.get("area") or ""),
+        "urgency": _clean_text(entry.get("urgency") or "Normal"),
+        "timestamp": _clean_text(entry.get("timestamp") or ""),
+        "status": _clean_text(entry.get("status") or "New"),
+        "sentiment": _clean_text(entry.get("sentiment") or "Neutral"),
     }
-    print(f"[n8n] Payload: {payload}")
-    print(f"[n8n] Sending to: {url}")
+    
+    # Validation
+    required_fields = ["feedback_id", "citizen_name", "citizen_email", "feedback"]
+    missing = [f for f in required_fields if not payload.get(f)]
+    if missing:
+        print(f"[n8n] ⚠️ WARNING: Missing required fields: {missing}")
+        print(f"[n8n] Available entry data: {entry}")
+    
+    print(f"[n8n] Final URL: {url}")
     result = _post(url, payload)
-    print(f"[n8n] Result: {result}")
+    print(f"[n8n] Final Result: {'✅ SUCCESS' if result else '❌ FAILED'}")
+    print(f"="*60 + "\n")
     return result
 
 

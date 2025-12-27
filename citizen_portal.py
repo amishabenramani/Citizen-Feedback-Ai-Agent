@@ -588,14 +588,29 @@ def init_session_state():
         st.session_state.citizen_id = None
     if 'submitted_ids' not in st.session_state:
         st.session_state.submitted_ids = []
+    if 'menu_selection' not in st.session_state:
+        st.session_state.menu_selection = "Home"
+    if 'menu_index' not in st.session_state:
+        st.session_state.menu_index = 0
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "home"
+    if 'stay_on_page' not in st.session_state:
+        st.session_state.stay_on_page = False
+    if 'success_shown' not in st.session_state:
+        st.session_state.success_shown = False
+    if 'n8n_success' not in st.session_state:
+        st.session_state.n8n_success = False
+    if 'submission_in_progress' not in st.session_state:
+        st.session_state.submission_in_progress = False
 
 
 def render_sidebar():
     """Render citizen sidebar with clean, modern option_menu navigation."""
     
-    # Initialize navigation state
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "home"
+    # Reset menu_changed flag at the start of each render
+    # This prevents false positives from previous renders
+    if 'menu_changed' not in st.session_state:
+        st.session_state.menu_changed = False
     
     # Custom CSS for modern sidebar styling
     st.markdown("""
@@ -816,13 +831,33 @@ def render_sidebar():
         
         # Add spacing
         st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
-        
+
+        # Determine default selection
+        # CRITICAL: Use stored menu_selection when on submit page to prevent unwanted navigation
+        is_on_submit_page = st.session_state.get('current_page') == 'submit'
+        is_in_submission = st.session_state.get('submission_in_progress', False)
+
+        # Hard lock the sidebar ONLY during actual submission (not after success)
+        if is_on_submit_page and is_in_submission:
+            st.session_state.menu_selection = "Submit Feedback"
+            st.session_state.menu_index = 1
+            st.session_state.menu_changed = False
+            st.session_state.current_page = "submit"
+            st.markdown("<div style='padding:8px 12px; border-radius:8px; background:#f5f3ff; border:1px solid #e4e0ff; color:#4b5563; font-size:13px;'>Navigation is locked while your submission is processing.</div>", unsafe_allow_html=True)
+            return "📝 Submit Feedback"
+
+        if st.session_state.get('stay_on_page'):
+            default_idx = 1
+        else:
+            default_idx = st.session_state.get('menu_index', 0)
+
         # Main Navigation Menu
         selected = option_menu(
             menu_title=None,
             options=["Home", "Submit Feedback", "Track Status", "Announcements", "Help & FAQs"],
             icons=["house-door", "pencil-square", "search", "bell", "question-circle"],
-            default_index=0,
+            default_index=default_idx,
+            key="navbar_menu",
             styles={
                 "container": {
                     "padding": "10px 15px",
@@ -854,9 +889,26 @@ def render_sidebar():
             },
         )
         
-        # Footer
-        st.markdown("<div style='height: 30px'></div>", unsafe_allow_html=True)
-        st.markdown("---")
+    # Check if menu selection actually changed by comparing with stored selection
+        current_selection = selected
+        stored_selection = st.session_state.get('menu_selection', "Home")
+        
+        # CRITICAL: When on submit page during submission, IGNORE menu selection change
+        # This prevents the option_menu from triggering unwanted navigation
+        is_on_submit_page = st.session_state.get('current_page') == 'submit'
+        # Only treat as submission while the form is actively processing
+        is_in_submission = st.session_state.get('submission_in_progress', False)
+        
+        if is_on_submit_page and is_in_submission and current_selection != "Submit Feedback":
+            # We're on submit page, but option_menu is showing a different selection
+            # This is the menu widget's internal state bug - IGNORE it
+            # Keep the stored selection and don't update anything
+            st.session_state.menu_changed = False
+        elif current_selection != stored_selection and not st.session_state.get('nav_to'):
+            # Normal menu change detection
+            st.session_state.menu_changed = True
+        else:
+            st.session_state.menu_changed = False
         st.markdown("""
         <div style="text-align: center; padding: 10px 0;">
             <p style="font-family: 'Inter', sans-serif; font-size: 12px; color: #9ca3af; margin: 0;">
@@ -874,13 +926,39 @@ def render_sidebar():
         "Help & FAQs": "❓ Help & FAQs"
     }
     
-    # Check if navigation was triggered from home page buttons
-    if 'nav_to' in st.session_state and st.session_state.nav_to:
+    # Check if navigation was triggered from home page buttons FIRST
+    # Process nav_to BEFORE menu_changed to avoid interference
+    # BUT: Don't process navigation if we just submitted a form successfully
+    if 'nav_to' in st.session_state and st.session_state.nav_to and not st.session_state.get('stay_on_page', False):
         nav_target = st.session_state.nav_to
         st.session_state.nav_to = None  # Clear the navigation trigger
+        st.session_state.menu_changed = False  # Clear any pending menu_changed flag
+        
+        # Clear any stale submit state so we don't re-show old success messages
+        st.session_state.stay_on_page = False
+        st.session_state.success_shown = False
+        st.session_state.submission_in_progress = False
+        st.session_state.last_tracking_id = None
+        st.session_state.last_email = None
+        st.session_state.n8n_success = False
+
+        # Align menu selection/index with target so next rerun keeps the correct page
+        if nav_target == "home":
+            st.session_state.menu_selection = "Home"
+            st.session_state.menu_index = 0
+        elif nav_target == "submit":
+            st.session_state.menu_selection = "Submit Feedback"
+            st.session_state.menu_index = 1
+        elif nav_target == "track":
+            st.session_state.menu_selection = "Track Status"
+            st.session_state.menu_index = 2
+        elif nav_target == "announce":
+            st.session_state.menu_selection = "Announcements"
+            st.session_state.menu_index = 3
         
         # Map nav_to values to page names
         nav_mapping = {
+            "home": "🏠 Home",
             "submit": "📝 Submit Feedback",
             "track": "🔍 Track My Feedback",
             "announce": "📢 Public Announcements"
@@ -889,7 +967,37 @@ def render_sidebar():
         if nav_target in nav_mapping:
             return nav_mapping[nav_target]
     
-    # Update session state
+    # Check if menu selection changed - reset stay_on_page flag ONLY when user manually navigates to a different page
+    # Don't clear it if they're still on the Submit Feedback page viewing the success message
+    # Also skip this check if nav_to was just processed (which returned above)
+    if st.session_state.get('menu_changed'):
+        st.session_state.menu_changed = False
+        
+        # Allow manual navigation after success; only lock during active submission
+        stored_selection = st.session_state.get('menu_selection', "Home")
+        if not st.session_state.get('submission_in_progress', False):
+            st.session_state.stay_on_page = False
+            st.session_state.last_tracking_id = None
+            st.session_state.last_email = None
+            st.session_state.n8n_success = False
+            st.session_state.success_shown = False
+    
+    # Update session state - save the selection and index
+    # CRITICAL: Don't update if we're ignoring the menu change during submission
+    is_on_submit_page = st.session_state.get('current_page') == 'submit'
+    # Consider only actual submission activity as locked state
+    is_in_submission = st.session_state.get('submission_in_progress', False)
+    
+    if not (is_on_submit_page and is_in_submission and selected != "Submit Feedback"):
+        # Only update if not in the ignored state
+        st.session_state.menu_selection = selected
+    
+    options_list = ["Home", "Submit Feedback", "Track Status", "Announcements", "Help & FAQs"]
+    try:
+        st.session_state.menu_index = options_list.index(st.session_state.menu_selection)
+    except ValueError:
+        st.session_state.menu_index = 0
+    
     key_mapping = {
         "Home": "home",
         "Submit Feedback": "submit",
@@ -897,9 +1005,12 @@ def render_sidebar():
         "Announcements": "announcements",
         "Help & FAQs": "favorites"
     }
-    st.session_state.current_page = key_mapping.get(selected, "home")
+    # CRITICAL: Use stored menu_selection for page rendering, not option_menu's selected value
+    # This prevents option_menu's widget state from causing unwanted navigation
+    st.session_state.current_page = key_mapping.get(st.session_state.menu_selection, "home")
     
-    return page_mapping.get(selected, "🏠 Home")
+    # Return page based on stored menu_selection, not option_menu's selected value
+    return page_mapping.get(st.session_state.menu_selection, "🏠 Home")
 
 
 def render_home_page():
@@ -1061,6 +1172,13 @@ def render_home_page():
 
 def render_submit_page():
     """Render feedback submission page for citizens."""
+    # IMPORTANT: Reset submission_in_progress flag when arriving at this page
+    # This ensures the form is never stuck in a "submission in progress" state
+    # after navigating away and coming back
+    if st.session_state.get('submission_in_progress', False):
+        print("[feedback] RESET: submission_in_progress flag was True, resetting to False")
+        st.session_state.submission_in_progress = False
+    
     st.markdown('<p class="main-header">📝 Submit Your Feedback</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Help us improve by sharing your concerns, suggestions, or compliments.</p>', unsafe_allow_html=True)
     
@@ -1073,12 +1191,27 @@ def render_submit_page():
             # Contact Information
             col_a, col_b = st.columns(2)
             with col_a:
-                name = st.text_input("Your Name *", placeholder="John Doe")
+                name = st.text_input(
+                    "Your Name *",
+                    placeholder="John Doe",
+                    key="citizen_name",
+                    autocomplete="name"
+                )
             with col_b:
-                email = st.text_input("Email *", placeholder="john@example.com", 
-                                     help="Required for tracking your submission")
+                email = st.text_input(
+                    "Email *",
+                    placeholder="john@example.com",
+                    help="Required for tracking your submission",
+                    key="citizen_email",
+                    autocomplete="email"
+                )
             
-            phone = st.text_input("Phone (Optional)", placeholder="+1 234 567 8900")
+            phone = st.text_input(
+                "Phone (Optional)",
+                placeholder="+1 234 567 8900",
+                key="citizen_phone",
+                autocomplete="tel"
+            )
             
             st.divider()
             
@@ -1120,18 +1253,34 @@ def render_submit_page():
             st.subheader("📍 Location Details")
             col_loc1, col_loc2 = st.columns(2)
             with col_loc1:
-                area = st.text_input("Neighborhood/Area *", placeholder="Downtown")
+                area = st.text_input(
+                    "Neighborhood/Area *",
+                    placeholder="Downtown",
+                    key="citizen_area",
+                    autocomplete="address-level2"
+                )
             with col_loc2:
-                address = st.text_input("Street Address (Optional)", placeholder="123 Main St")
+                address = st.text_input(
+                    "Street Address (Optional)",
+                    placeholder="123 Main St",
+                    key="citizen_address",
+                    autocomplete="address-line1"
+                )
             
             # Feedback Content
             st.subheader("📝 Your Feedback")
-            title = st.text_input("Brief Title *", placeholder="Pothole on Main Street")
+            title = st.text_input(
+                "Brief Title *",
+                placeholder="Pothole on Main Street",
+                key="feedback_title",
+                autocomplete="on"
+            )
             
             feedback_text = st.text_area(
                 "Detailed Description *",
                 placeholder="Please describe the issue in detail. Include what you observed, when it happened, and any other relevant information...",
-                height=150
+                height=150,
+                key="feedback_text"
             )
             
             # Optional photo upload placeholder
@@ -1146,63 +1295,92 @@ def render_submit_page():
             submitted = st.form_submit_button("🚀 Submit Feedback", type="primary", use_container_width=True)
             
             if submitted:
+                # Set flag to prevent menu navigation from interfering with submission
+                st.session_state.submission_in_progress = True
+                
+                # Clear any pending navigation to prevent interference with form submission
+                st.session_state.nav_to = None
+                
+                # Immediate user feedback and debug logging
+                st.toast("Submitting your feedback...", icon="✅")
+                
                 # Validation
                 if not name or not email or not title or not feedback_text or not area:
+                    st.session_state.submission_in_progress = False
                     st.error("⚠️ Please fill in all required fields (marked with *)")
                 elif not consent:
+                    st.session_state.submission_in_progress = False
                     st.error("⚠️ Please agree to the terms to submit your feedback")
                 else:
-                    # AI Analysis
-                    analysis = st.session_state.analyzer.analyze(feedback_text)
-                    
-                    # Generate tracking ID
-                    tracking_id = st.session_state.data_manager.generate_id()
-                    
-                    # Create feedback entry
-                    feedback_entry = {
-                        "id": tracking_id,
-                        "timestamp": datetime.now().isoformat(),
-                        "name": name,
-                        "email": email,
-                        "phone": phone if phone else "N/A",
-                        "feedback_type": feedback_type,
-                        "category": category,
-                        "urgency": urgency,
-                        "area": area,
-                        "address": address if address else "Not specified",
-                        "location": f"{area}, {address}" if address else area,
-                        "title": title,
-                        "feedback": feedback_text,
-                        "sentiment": analysis["sentiment"],
-                        "sentiment_score": analysis["sentiment_score"],
-                        "keywords": analysis["keywords"],
-                        "summary": analysis["summary"],
-                        "status": "New",
-                        "admin_notes": "",
-                        "assigned_to": "",
-                        "priority": "Normal"
-                    }
-                    
-                    # Save
-                    st.session_state.data_manager.add_feedback(feedback_entry)
-                    st.session_state.submitted_ids.append(tracking_id)
-
-                    # Send to n8n (if configured)
                     try:
-                        send_feedback_submitted(feedback_entry)
-                    except Exception:
-                        pass
-                    
-                    # Success message
-                    st.balloons()
-                    st.success(f"""
-                    ✅ **Feedback Submitted Successfully!**
-                    
-                    📋 **Your Tracking ID:** `{tracking_id}`
-                    
-                    Save this ID to track your submission status. 
-                    We'll also send updates to: {email}
-                    """)
+                        # AI Analysis
+                        analysis = st.session_state.analyzer.analyze(feedback_text)
+                        
+                        # Generate tracking ID
+                        tracking_id = st.session_state.data_manager.generate_id()
+                        
+                        # Create feedback entry (using both formats for compatibility)
+                        feedback_entry = {
+                            # Primary fields (for internal use)
+                            "id": tracking_id,
+                            "timestamp": datetime.now().isoformat(),
+                            "name": name,
+                            "email": email,
+                            "phone": phone if phone else "N/A",
+                            
+                            # n8n-compatible field names
+                            "feedback_id": tracking_id,
+                            "citizen_name": name,
+                            "citizen_email": email,
+                            "citizen_phone": phone if phone else "N/A",
+                            
+                            # Common fields
+                            "feedback_type": feedback_type,
+                            "category": category,
+                            "urgency": urgency,
+                            "area": area,
+                            "address": address if address else "Not specified",
+                            "location": f"{area}, {address}" if address else area,
+                            "title": title,
+                            "feedback": feedback_text,
+                            "sentiment": analysis["sentiment"],
+                            "sentiment_score": analysis["sentiment_score"],
+                            "keywords": analysis["keywords"],
+                            "summary": analysis["summary"],
+                            "status": "New",
+                            "admin_notes": "",
+                            "assigned_to": "",
+                            "priority": "Normal"
+                        }
+                        
+                        # Save
+                        st.session_state.data_manager.add_feedback(feedback_entry)
+                        st.session_state.submitted_ids.append(tracking_id)
+                        
+                        # Set flag to stay on this page and preserve menu selection
+                        st.session_state.stay_on_page = True
+                        st.session_state.success_shown = False  # Reset success_shown flag for proper display
+                        st.session_state.menu_selection = "Submit Feedback"
+                        st.session_state.menu_index = 1
+                        st.session_state.last_tracking_id = tracking_id
+                        st.session_state.last_email = email
+                        
+                        # Send to n8n (if configured) - with better error handling
+                        try:
+                            n8n_success = send_feedback_submitted(feedback_entry)
+                            st.session_state.n8n_success = n8n_success
+                        except Exception as e:
+                            st.session_state.n8n_success = False
+                        finally:
+                            # Always mark submission as complete
+                            st.session_state.submission_in_progress = False
+                        
+                        # Force rerun to display success message
+                        st.rerun()
+                    except Exception as e:
+                        st.session_state.stay_on_page = False
+                        st.session_state.submission_in_progress = False
+                        st.error("❌ Submission failed. Please try again.")
     
     with col2:
         st.markdown("""
@@ -1236,6 +1414,66 @@ def render_submit_page():
             <p>For urgent city services, call <strong>311</strong>.</p>
         </div>
         """, unsafe_allow_html=True)
+    
+    # Show success message below the form if just submitted
+    if st.session_state.get('stay_on_page', False):
+        st.divider()
+        # Show celebration only once per successful submission
+        if not st.session_state.get('success_shown', False):
+            st.balloons()
+            st.session_state.success_shown = True
+        st.success(f"""
+        ✅ **Feedback Submitted Successfully!**
+        
+        📋 **Your Tracking ID:** `{st.session_state.get('last_tracking_id', 'N/A')}`
+        
+        Save this ID to track your submission status. 
+        We'll also send updates to: {st.session_state.get('last_email', 'your email')}
+        
+        **Note:** Please check your spam/junk folder for the confirmation email. 
+        It may take a few minutes to arrive.
+        """)
+        
+        # Show n8n webhook status
+        if st.session_state.get('n8n_success', False):
+            st.success("✅ Webhook notification sent to n8n workflow!")
+        else:
+            st.info("ℹ️ Note: Webhook notification could not be sent. Your feedback has been saved locally. Check terminal logs for details.")
+        
+        # Add buttons to navigate or submit another
+        col_btn1, col_btn2, col_btn3 = st.columns(3)
+        
+        with col_btn1:
+            if st.button("📝 Submit Another Feedback", use_container_width=True, key="submit_another"):
+                # Reset submission state for next form submission
+                st.session_state.stay_on_page = False
+                st.session_state.success_shown = False
+                st.session_state.last_tracking_id = None
+                st.session_state.last_email = None
+                st.session_state.n8n_success = False
+                st.rerun()
+        
+        with col_btn2:
+            if st.button("🔍 Track Status", use_container_width=True, key="track_from_success"):
+                # Clear success state before navigating
+                st.session_state.stay_on_page = False
+                st.session_state.success_shown = False
+                st.session_state.last_tracking_id = None
+                st.session_state.last_email = None
+                st.session_state.n8n_success = False
+                st.session_state.nav_to = "track"
+                st.rerun()
+        
+        with col_btn3:
+            if st.button("🏠 Back Home", use_container_width=True, key="home_from_success"):
+                # Clear success state before navigating
+                st.session_state.stay_on_page = False
+                st.session_state.success_shown = False
+                st.session_state.last_tracking_id = None
+                st.session_state.last_email = None
+                st.session_state.n8n_success = False
+                st.session_state.nav_to = "home"
+                st.rerun()
 
 
 def render_track_page():
