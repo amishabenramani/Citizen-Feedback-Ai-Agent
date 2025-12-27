@@ -840,11 +840,39 @@ def render_all_feedback():
                     if new_status == 'Resolved':
                         updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
                         if updated:
-                            try:
-                                send_feedback_resolved(updated)
-                            except Exception:
-                                pass
-                    st.success("✅ Changes saved!")
+                            # Ensure required fields for n8n
+                            if 'updated_at' not in updated or not updated.get('updated_at'):
+                                from datetime import datetime
+                                updated['updated_at'] = datetime.now().isoformat()
+                            if 'admin_notes' not in updated or not updated.get('admin_notes'):
+                                updated['admin_notes'] = notes if notes else 'Resolved by admin'
+                            if 'assigned_to' not in updated or not updated.get('assigned_to'):
+                                updated['assigned_to'] = assigned if assigned else 'City Admin'
+                            
+                            # CRITICAL: Ensure citizen email and name are present
+                            if not updated.get('citizen_email'):
+                                updated['citizen_email'] = updated.get('email', '')
+                            if not updated.get('citizen_name'):
+                                updated['citizen_name'] = updated.get('name', 'Anonymous')
+                            
+                            # Validate email exists before sending to n8n
+                            if not updated.get('citizen_email'):
+                                st.error("❌ Cannot send email: Citizen email address is missing in feedback data!")
+                                print(f"[ERROR] Missing citizen_email for feedback {row.get('id')}")
+                            else:
+                                try:
+                                    print(f"[DEBUG] Sending resolution for {row.get('id')}")
+                                    print(f"[DEBUG] citizen_email: '{updated.get('citizen_email')}'")
+                                    print(f"[DEBUG] citizen_name: '{updated.get('citizen_name')}'")
+                                    result = send_feedback_resolved(updated)
+                                    print(f"[DEBUG] Resolution result: {result}")
+                                    if result:
+                                        st.success("✅ Changes saved and email sent to citizen!")
+                                    else:
+                                        st.warning("✅ Changes saved but email notification had an issue. Check logs.")
+                                except Exception as e:
+                                    print(f"[ERROR] Resolution email error: {e}")
+                                    st.error(f"❌ Error sending resolution email: {e}")
                     st.rerun()
                 
                 # Delete button
@@ -914,14 +942,46 @@ def render_priority_queue():
                 st.rerun()
         with col3:
             if st.button("✅ Mark Resolved", key=f"resolve_{row.get('id')}"):
-                st.session_state.data_manager.update_status(row.get('id'), 'Resolved')
-                # Fetch updated entry and notify n8n
-                updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
+                # Update status and add timestamp
+                feedback_id = row.get('id')
+                st.session_state.data_manager.update_status(feedback_id, 'Resolved')
+                
+                # Get updated entry and ensure all required fields are set
+                updated = st.session_state.data_manager.get_feedback_by_id(feedback_id)
                 if updated:
-                    try:
-                        send_feedback_resolved(updated)
-                    except Exception:
-                        pass
+                    # Ensure required fields for n8n
+                    if 'updated_at' not in updated or not updated.get('updated_at'):
+                        from datetime import datetime
+                        updated['updated_at'] = datetime.now().isoformat()
+                    if 'admin_notes' not in updated or not updated.get('admin_notes'):
+                        updated['admin_notes'] = 'Resolved by admin'
+                    if 'assigned_to' not in updated or not updated.get('assigned_to'):
+                        updated['assigned_to'] = 'City Admin'
+                    
+                    # CRITICAL: Ensure citizen email and name are present
+                    if not updated.get('citizen_email'):
+                        updated['citizen_email'] = updated.get('email', '')
+                    if not updated.get('citizen_name'):
+                        updated['citizen_name'] = updated.get('name', 'Anonymous')
+                    
+                    # Validate email exists before sending to n8n
+                    if not updated.get('citizen_email'):
+                        st.error("❌ Cannot send email: Citizen email address is missing in feedback data!")
+                        print(f"[ERROR] Missing citizen_email for feedback {feedback_id}")
+                    else:
+                        try:
+                            print(f"[DEBUG] Sending resolution for {feedback_id}")
+                            print(f"[DEBUG] citizen_email: '{updated.get('citizen_email')}'")
+                            print(f"[DEBUG] citizen_name: '{updated.get('citizen_name')}'")
+                            result = send_feedback_resolved(updated)
+                            print(f"[DEBUG] Resolution result: {result}")
+                            if result:
+                                st.success("✅ Resolved and email sent to citizen!")
+                            else:
+                                st.warning("✅ Resolved but email notification had an issue. Check logs.")
+                        except Exception as e:
+                            print(f"[ERROR] Resolution email error: {e}")
+                            st.error(f"❌ Error sending resolution email: {e}")
                 st.rerun()
         
         st.divider()

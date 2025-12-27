@@ -178,7 +178,14 @@ def send_feedback_resolved(entry: Dict[str, Any]) -> bool:
     """
     url = _build_url("feedback-resolved")
     if not url:
+        print("[n8n] ❌ No webhook URL configured in data/n8n_config.json")
         return False
+
+    print(f"\n" + "="*60)
+    print(f"[n8n] 🚀 SENDING RESOLUTION TO n8n")
+    print(f"="*60)
+    print(f"[n8n] Entry received: {entry}")
+    print(f"[n8n] Entry keys: {list(entry.keys())}")
 
     # Clean all text fields
     payload = {
@@ -193,8 +200,20 @@ def send_feedback_resolved(entry: Dict[str, Any]) -> bool:
         "assigned_to": _clean_text(entry.get("assigned_to")),
         "resolution_notes": _clean_text(entry.get("admin_notes")),
     }
-    print(f"[n8n] Resolved payload: {payload}")
+    
+    # Validate required fields
+    required_fields = ["feedback_id", "citizen_name", "citizen_email"]
+    missing = [f for f in required_fields if not payload.get(f)]
+    if missing:
+        print(f"[n8n] ❌ CRITICAL ERROR: Missing required fields: {missing}")
+        print(f"[n8n] Payload: {json.dumps(payload, indent=2)}")
+        return False  # Don't send invalid data to n8n
+    
+    print(f"[n8n] Final payload:")
+    print(f"[n8n] {json.dumps(payload, indent=2)}")
     print(f"[n8n] Sending to: {url}")
+    
     result = _post(url, payload)
-    print(f"[n8n] Result: {result}")
+    print(f"[n8n] Result: {'✅ SUCCESS' if result else '❌ FAILED'}")
+    print(f"="*60 + "\n")
     return result
