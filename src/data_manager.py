@@ -1,20 +1,24 @@
 """
 Data Manager Module
 Handles all data storage, retrieval, and management operations for citizen feedback.
+Uses PostgreSQL database for persistent storage.
 """
 
-import json
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional, Any
 import pandas as pd
+from sqlalchemy import and_, or_
+from sqlalchemy.exc import SQLAlchemyError
+
+from .database import Database
+from .db_models import Feedback
 
 
 class DataManager:
     """
     Manages citizen feedback data storage and retrieval.
-    Uses JSON file storage for persistence.
+    Uses PostgreSQL database for persistence.
     """
     
     def __init__(self, data_dir: str = "data"):
@@ -22,40 +26,16 @@ class DataManager:
         Initialize the data manager.
         
         Args:
-            data_dir: Directory to store data files
-        """
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.feedback_file = self.data_dir / "feedback.json"
-        self._ensure_data_file()
-    
-    def _ensure_data_file(self):
-        """Ensure the data file exists."""
-        if not self.feedback_file.exists():
-            self._save_data([])
-    
-    def _load_data(self) -> List[Dict[str, Any]]:
-        """
-        Load feedback data from file.
-        
-        Returns:
-            List of feedback entries
+            data_dir: Directory path (maintained for compatibility, not used)
         """
         try:
-            with open(self.feedback_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
-    
-    def _save_data(self, data: List[Dict[str, Any]]):
-        """
-        Save feedback data to file.
-        
-        Args:
-            data: List of feedback entries to save
-        """
-        with open(self.feedback_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            # Initialize database connection
+            Database.initialize()
+            Database.create_tables()
+            print("✓ Connected to PostgreSQL database")
+        except Exception as e:
+            print(f"✗ PostgreSQL connection failed: {e}")
+            raise RuntimeError(f"Cannot initialize DataManager without PostgreSQL: {e}")
     
     def generate_id(self) -> str:
         """
@@ -68,16 +48,17 @@ class DataManager:
     
     def add_feedback(self, feedback: Dict[str, Any]) -> str:
         """
-        Add a new feedback entry.
+        Add a new feedback entry to PostgreSQL.
         
         Args:
             feedback: Feedback data dictionary
             
         Returns:
             ID of the added feedback
+            
+        Raises:
+            Exception: If database operation fails
         """
-        data = self._load_data()
-        
         # Ensure required fields
         if 'id' not in feedback:
             feedback['id'] = self.generate_id()
@@ -86,14 +67,16 @@ class DataManager:
         if 'status' not in feedback:
             feedback['status'] = 'New'
         
-        data.append(feedback)
-        self._save_data(data)
+        with Database.session_scope() as session:
+            # Create feedback model from dict
+            fb = Feedback.from_dict(feedback)
+            session.add(fb)
         
         return feedback['id']
     
     def get_feedback_by_id(self, feedback_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get a specific feedback entry by ID.
+        Get a specific feedback entry by ID from PostgreSQL.
         
         Args:
             feedback_id: The ID of the feedback to retrieve
@@ -101,20 +84,20 @@ class DataManager:
         Returns:
             Feedback dictionary or None if not found
         """
-        data = self._load_data()
-        for entry in data:
-            if entry.get('id') == feedback_id:
-                return entry
-        return None
+        with Database.session_scope() as session:
+            fb = session.query(Feedback).filter(Feedback.id == feedback_id).first()
+            return fb.to_dict() if fb else None
     
     def get_all_feedback(self) -> List[Dict[str, Any]]:
         """
-        Get all feedback entries.
+        Get all feedback entries from PostgreSQL.
         
         Returns:
             List of all feedback entries
         """
-        return self._load_data()
+        with Database.session_scope() as session:
+            feedbacks = session.query(Feedback).order_by(Feedback.timestamp.desc()).all()
+            return [fb.to_dict() for fb in feedbacks]
     
     def get_feedback_dataframe(self) -> pd.DataFrame:
         """
@@ -123,14 +106,14 @@ class DataManager:
         Returns:
             DataFrame with all feedback data
         """
-        data = self._load_data()
+        data = self.get_all_feedback()
         if not data:
             return pd.DataFrame()
         return pd.DataFrame(data)
     
     def update_feedback(self, feedback_id: str, updates: Dict[str, Any]) -> bool:
         """
-        Update a feedback entry.
+        Update a feedback entry in PostgreSQL.
         
         Args:
             feedback_id: ID of the feedback to update
@@ -139,16 +122,16 @@ class DataManager:
         Returns:
             True if update was successful, False otherwise
         """
-        data = self._load_data()
+        updates['updated_at'] = datetime.now().isoformat()
         
-        for i, entry in enumerate(data):
-            if entry.get('id') == feedback_id:
-                data[i].update(updates)
-                data[i]['updated_at'] = datetime.now().isoformat()
-                self._save_data(data)
+        with Database.session_scope() as session:
+            fb = session.query(Feedback).filter(Feedback.id == feedback_id).first()
+            if fb:
+                for key, value in updates.items():
+                    if hasattr(fb, key):
+                        setattr(fb, key, value)
                 return True
-        
-        return False
+            return False
     
     def update_status(self, feedback_id: str, new_status: str) -> bool:
         """
@@ -165,7 +148,7 @@ class DataManager:
     
     def delete_feedback(self, feedback_id: str) -> bool:
         """
-        Delete a feedback entry.
+        Delete a feedback entry from PostgreSQL.
         
         Args:
             feedback_id: ID of the feedback to delete
@@ -173,23 +156,21 @@ class DataManager:
         Returns:
             True if deletion was successful
         """
-        data = self._load_data()
-        original_length = len(data)
-        
-        data = [entry for entry in data if entry.get('id') != feedback_id]
-        
-        if len(data) < original_length:
-            self._save_data(data)
-            return True
-        return False
+        with Database.session_scope() as session:
+            fb = session.query(Feedback).filter(Feedback.id == feedback_id).first()
+            if fb:
+                session.delete(fb)
+                return True
+            return False
     
     def clear_all_data(self):
-        """Clear all feedback data."""
-        self._save_data([])
+        """Clear all feedback data from PostgreSQL."""
+        with Database.session_scope() as session:
+            session.query(Feedback).delete()
     
     def get_feedback_by_category(self, category: str) -> List[Dict[str, Any]]:
         """
-        Get feedback entries by category.
+        Get feedback entries by category from PostgreSQL.
         
         Args:
             category: Category to filter by
@@ -197,12 +178,13 @@ class DataManager:
         Returns:
             List of matching feedback entries
         """
-        data = self._load_data()
-        return [entry for entry in data if entry.get('category') == category]
+        with Database.session_scope() as session:
+            feedbacks = session.query(Feedback).filter(Feedback.category == category).all()
+            return [fb.to_dict() for fb in feedbacks]
     
     def get_feedback_by_sentiment(self, sentiment: str) -> List[Dict[str, Any]]:
         """
-        Get feedback entries by sentiment.
+        Get feedback entries by sentiment from PostgreSQL.
         
         Args:
             sentiment: Sentiment to filter by (Positive, Negative, Neutral)
@@ -210,12 +192,13 @@ class DataManager:
         Returns:
             List of matching feedback entries
         """
-        data = self._load_data()
-        return [entry for entry in data if entry.get('sentiment') == sentiment]
+        with Database.session_scope() as session:
+            feedbacks = session.query(Feedback).filter(Feedback.sentiment == sentiment).all()
+            return [fb.to_dict() for fb in feedbacks]
     
     def get_feedback_by_status(self, status: str) -> List[Dict[str, Any]]:
         """
-        Get feedback entries by status.
+        Get feedback entries by status from PostgreSQL.
         
         Args:
             status: Status to filter by
@@ -223,8 +206,9 @@ class DataManager:
         Returns:
             List of matching feedback entries
         """
-        data = self._load_data()
-        return [entry for entry in data if entry.get('status') == status]
+        with Database.session_scope() as session:
+            feedbacks = session.query(Feedback).filter(Feedback.status == status).all()
+            return [fb.to_dict() for fb in feedbacks]
     
     def get_feedback_by_date_range(
         self, 
@@ -232,7 +216,7 @@ class DataManager:
         end_date: datetime
     ) -> List[Dict[str, Any]]:
         """
-        Get feedback entries within a date range.
+        Get feedback entries within a date range from PostgreSQL.
         
         Args:
             start_date: Start of the date range
@@ -241,18 +225,11 @@ class DataManager:
         Returns:
             List of matching feedback entries
         """
-        data = self._load_data()
-        filtered = []
-        
-        for entry in data:
-            try:
-                entry_date = datetime.fromisoformat(entry.get('timestamp', ''))
-                if start_date <= entry_date <= end_date:
-                    filtered.append(entry)
-            except (ValueError, TypeError):
-                continue
-        
-        return filtered
+        with Database.session_scope() as session:
+            feedbacks = session.query(Feedback).filter(
+                and_(Feedback.timestamp >= start_date, Feedback.timestamp <= end_date)
+            ).all()
+            return [fb.to_dict() for fb in feedbacks]
     
     def get_statistics(self) -> Dict[str, Any]:
         """
@@ -261,7 +238,7 @@ class DataManager:
         Returns:
             Dictionary with various statistics
         """
-        data = self._load_data()
+        data = self.get_all_feedback()
         
         if not data:
             return {
@@ -290,7 +267,7 @@ class DataManager:
     
     def import_from_dataframe(self, df: pd.DataFrame) -> int:
         """
-        Import feedback from a pandas DataFrame.
+        Import feedback from a pandas DataFrame into PostgreSQL.
         
         Args:
             df: DataFrame with feedback data
@@ -298,8 +275,7 @@ class DataManager:
         Returns:
             Number of records imported
         """
-        data = self._load_data()
-        
+        count = 0
         for _, row in df.iterrows():
             entry = row.to_dict()
             if 'id' not in entry or pd.isna(entry.get('id')):
@@ -308,14 +284,17 @@ class DataManager:
                 entry['timestamp'] = datetime.now().isoformat()
             if 'status' not in entry or pd.isna(entry.get('status')):
                 entry['status'] = 'New'
-            data.append(entry)
+            
+            with Database.session_scope() as session:
+                fb = Feedback.from_dict(entry)
+                session.add(fb)
+            count += 1
         
-        self._save_data(data)
-        return len(df)
+        return count
     
     def export_to_json(self, filepath: str) -> bool:
         """
-        Export all feedback to a JSON file.
+        Export all feedback from PostgreSQL to a JSON file.
         
         Args:
             filepath: Path to export file
@@ -323,8 +302,9 @@ class DataManager:
         Returns:
             True if export was successful
         """
+        import json
         try:
-            data = self._load_data()
+            data = self.get_all_feedback()
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False, default=str)
             return True

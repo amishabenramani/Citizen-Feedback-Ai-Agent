@@ -1,0 +1,6 @@
+{
+  "database_url": "postgresql://postgres:postgres@localhost:5432/citizen_feedback",
+  "description": "PostgreSQL database configuration for Citizen Feedback AI Agent",
+  "note": "You can also set DATABASE_URL environment variable to override this configuration",
+  "setup_instructions": "1. Install PostgreSQL from https://www.postgresql.org/download/windows/\n2. Create database: CREATE DATABASE citizen_feedback;\n3. Update password if different in this config\n4. Run migration: python migrate_to_postgres.py"
+}
