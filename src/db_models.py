@@ -43,6 +43,8 @@ class Feedback(Base):
     area = Column(String(200))
     address = Column(Text)
     location = Column(Text)
+    latitude = Column(Float, index=True)  # Geographic latitude for mapping
+    longitude = Column(Float, index=True)  # Geographic longitude for mapping
     
     # Content
     title = Column(String(500))
@@ -79,6 +81,8 @@ class Feedback(Base):
             'area': self.area,
             'address': self.address,
             'location': self.location,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
             'title': self.title,
             'feedback': self.feedback,
             'sentiment': self.sentiment,
@@ -111,6 +115,8 @@ class Feedback(Base):
             area=data.get('area'),
             address=data.get('address'),
             location=data.get('location'),
+            latitude=data.get('latitude'),
+            longitude=data.get('longitude'),
             title=data.get('title'),
             feedback=data.get('feedback'),
             sentiment=data.get('sentiment'),

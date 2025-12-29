@@ -474,6 +474,7 @@ def render_sidebar():
             "Priority Queue",
             "Assignments",
             "Analytics",
+            "Advanced Analytics",
             "Export Data",
             "Settings",
         ]
@@ -484,6 +485,7 @@ def render_sidebar():
             "exclamation-triangle-fill",
             "people",
             "bar-chart-line",
+            "graph-up",
             "box-arrow-down",
             "gear",
         ]
@@ -1116,6 +1118,21 @@ def render_analytics():
             st.metric("Avg Sentiment Score", f"{avg_sentiment:.2f}")
 
 
+def render_advanced_analytics():
+    """Render the Advanced Analytics dashboard as a dedicated page."""
+    st.markdown('<p class="main-header">🚀 Advanced Analytics & Insights</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Comprehensive trends, SLA predictions, geospatial heatmaps, and performance metrics</p>', unsafe_allow_html=True)
+
+    df = st.session_state.data_manager.get_feedback_dataframe()
+
+    if df.empty:
+        st.info("No data for advanced analytics.")
+        return
+
+    st.session_state.dashboard.render_advanced_analytics_dashboard(df)
+
+
+
 def render_export():
     """Render data export page."""
     st.markdown('<p class="main-header">📤 Export Data</p>', unsafe_allow_html=True)
@@ -1234,6 +1251,8 @@ def main():
         render_assignments()
     elif page == "Analytics":
         render_analytics()
+    elif page == "Advanced Analytics":
+        render_advanced_analytics()
     elif page == "Export Data":
         render_export()
     elif page == "Settings":

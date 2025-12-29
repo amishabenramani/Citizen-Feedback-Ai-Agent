@@ -33,6 +33,50 @@ For administrators to manage citizen feedback:
 - **Urgency Detection**: Flag time-sensitive issues
 - **Category Detection**: Auto-categorize feedback
 
+## 📊 Advanced Analytics & Decision Support (NEW!)
+
+### Smart Dashboards with Actionable Insights
+
+#### 🗺️ **Geospatial Heatmaps**
+- Interactive complaint density heatmaps
+- Hotspot identification with severity scoring
+- Category distribution by geographic area
+- Temporal pattern analysis (day/hour)
+- Multiple map styles (OpenStreetMap, Carto)
+
+#### 📈 **Trend Analysis & Forecasting**
+- Daily/Weekly/Monthly feedback trends
+- 4-period moving average forecasts
+- Sentiment trend tracking
+- Category-specific trend analysis
+- Growth rate calculations
+
+#### ⚠️ **SLA Breach Prediction**
+- Real-time SLA monitoring
+- AI-powered breach probability scoring
+- At-risk ticket identification
+- Automated recommendations
+- Historical compliance tracking
+- Configurable SLA targets (Critical: 4h, High: 24h, Medium: 72h, Low: 168h)
+
+#### 🏢 **Department Performance Analytics**
+- Composite performance scoring (0-100)
+- Resolution rate & satisfaction tracking
+- SLA compliance monitoring
+- Response time analysis
+- Department comparison & benchmarking
+- Top/bottom performer identification
+
+#### ⏰ **Temporal Pattern Analysis**
+- Day-of-week and hour-of-day heatmaps
+- Peak time identification
+- Hourly submission distribution
+- Resource planning insights
+
+**📖 Full Documentation:** See [ADVANCED_ANALYTICS.md](ADVANCED_ANALYTICS.md) for complete feature guide
+
+**🚀 Quick Start:** See [QUICK_START_ANALYTICS.md](QUICK_START_ANALYTICS.md) for 5-minute setup
+
 ## 🚀 Quick Start
 
 ### Prerequisites
