@@ -473,6 +473,7 @@ def render_sidebar():
             "All Feedback",
             "Priority Queue",
             "Assignments",
+            "Staff Management",
             "Analytics",
             "Advanced Analytics",
             "Export Data",
@@ -484,6 +485,7 @@ def render_sidebar():
             "card-checklist",
             "exclamation-triangle-fill",
             "people",
+            "person-badge",
             "bar-chart-line",
             "graph-up",
             "box-arrow-down",
@@ -813,13 +815,33 @@ def render_all_feedback():
                     key=f"priority_{row.get('id', idx)}"
                 )
                 
-                # Assignment
-                assigned = st.text_input(
-                    "Assign To",
-                    value=row.get('assigned_to', ''),
-                    placeholder="Enter staff name",
-                    key=f"assign_{row.get('id', idx)}"
-                )
+                # Assignment - Get staff from database
+                staff_names = st.session_state.data_manager.get_staff_names(active_only=True)
+                current_assigned = row.get('assigned_to', '')
+                
+                if staff_names:
+                    # Use selectbox with staff from database
+                    staff_options = ["None"] + staff_names
+                    if current_assigned and current_assigned not in staff_options:
+                        staff_options.insert(1, current_assigned)
+                    
+                    default_index = staff_options.index(current_assigned) if current_assigned in staff_options else 0
+                    assigned = st.selectbox(
+                        "Assign To",
+                        staff_options,
+                        index=default_index,
+                        key=f"assign_{row.get('id', idx)}"
+                    )
+                    if assigned == "None":
+                        assigned = ""
+                else:
+                    # No staff in database, use text input
+                    assigned = st.text_input(
+                        "Assign To",
+                        value=current_assigned,
+                        placeholder="Add staff in Staff Management first",
+                        key=f"assign_{row.get('id', idx)}"
+                    )
                 
                 # Admin notes
                 notes = st.text_area(
@@ -829,33 +851,39 @@ def render_all_feedback():
                     key=f"notes_{row.get('id', idx)}"
                 )
                 
-                # Save button
+                # Save button with workflow validation
                 if st.button("💾 Save Changes", key=f"save_{row.get('id', idx)}", use_container_width=True):
-                    updates = {
-                        'status': new_status,
-                        'priority': new_priority,
-                        'assigned_to': assigned,
-                        'admin_notes': notes
-                    }
-                    st.session_state.data_manager.update_feedback(row.get('id'), updates)
-                    # If resolved, notify n8n
-                    if new_status == 'Resolved':
-                        updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
-                        if updated:
-                            # Ensure required fields for n8n
-                            if 'updated_at' not in updated or not updated.get('updated_at'):
-                                from datetime import datetime
-                                updated['updated_at'] = datetime.now().isoformat()
-                            if 'admin_notes' not in updated or not updated.get('admin_notes'):
-                                updated['admin_notes'] = notes if notes else 'Resolved by admin'
-                            if 'assigned_to' not in updated or not updated.get('assigned_to'):
-                                updated['assigned_to'] = assigned if assigned else 'City Admin'
-                            
-                            # CRITICAL: Ensure citizen email and name are present
-                            if not updated.get('citizen_email'):
-                                updated['citizen_email'] = updated.get('email', '')
-                            if not updated.get('citizen_name'):
-                                updated['citizen_name'] = updated.get('name', 'Anonymous')
+                    # Workflow validation: Only allow In Progress/Resolved/Closed if assigned
+                    if new_status in ["In Progress", "Resolved", "Closed"] and (not assigned or assigned == "None"):
+                        st.error(f"❌ Cannot mark as '{new_status}' without assigning to staff. Please select a staff member first.")
+                    else:
+                        updates = {
+                            'status': new_status,
+                            'priority': new_priority,
+                            'assigned_to': assigned,
+                            'admin_notes': notes
+                        }
+                        st.session_state.data_manager.update_feedback(row.get('id'), updates)
+                        st.success(f"✅ Feedback updated!")
+                        
+                        # If resolved, notify n8n
+                        if new_status == 'Resolved':
+                            updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
+                            if updated:
+                                # Ensure required fields for n8n
+                                if 'updated_at' not in updated or not updated.get('updated_at'):
+                                    from datetime import datetime
+                                    updated['updated_at'] = datetime.now().isoformat()
+                                if 'admin_notes' not in updated or not updated.get('admin_notes'):
+                                    updated['admin_notes'] = notes if notes else 'Resolved by admin'
+                                if 'assigned_to' not in updated or not updated.get('assigned_to'):
+                                    updated['assigned_to'] = assigned if assigned else 'City Admin'
+                                
+                                # CRITICAL: Ensure citizen email and name are present
+                                if not updated.get('citizen_email'):
+                                    updated['citizen_email'] = updated.get('email', '')
+                                if not updated.get('citizen_name'):
+                                    updated['citizen_name'] = updated.get('name', 'Anonymous')
                             
                             # Validate email exists before sending to n8n
                             if not updated.get('citizen_email'):
@@ -1030,6 +1058,9 @@ def render_assignments():
     
     st.divider()
     
+    # Get staff from database
+    staff_names = st.session_state.data_manager.get_staff_names(active_only=True)
+    
     # Unassigned items
     st.subheader("📋 Unassigned Items")
     
@@ -1037,21 +1068,41 @@ def render_assignments():
         st.success("✅ All items have been assigned!")
     else:
         for _, row in unassigned.head(20).iterrows():
-            col1, col2 = st.columns([3, 1])
+            col1, col2, col3 = st.columns([3, 2, 1])
             
             with col1:
                 st.write(f"**{row.get('id')}** - {row.get('title', 'Untitled')} | {row.get('category', 'N/A')} | {row.get('urgency', 'Medium')}")
             
             with col2:
-                staff = st.text_input(
-                    "Assign to",
-                    placeholder="Staff name",
-                    key=f"quick_assign_{row.get('id')}",
-                    label_visibility="collapsed"
-                )
-                if staff:
-                    st.session_state.data_manager.update_feedback(row.get('id'), {'assigned_to': staff})
-                    st.rerun()
+                if staff_names:
+                    # Show selectbox with staff from database
+                    staff_options = ["Select staff..."] + staff_names
+                    selected = st.selectbox(
+                        "Staff",
+                        options=staff_options,
+                        key=f"staff_select_{row.get('id')}",
+                        label_visibility="collapsed"
+                    )
+                else:
+                    # No staff in database
+                    selected = st.selectbox(
+                        "Staff",
+                        options=["No staff available - Add in Staff Management"],
+                        key=f"staff_select_{row.get('id')}",
+                        label_visibility="collapsed"
+                    )
+            
+            with col3:
+                # Assign button
+                if st.button("Assign", key=f"assign_btn_{row.get('id')}", type="primary"):
+                    if selected and selected != "Select staff..." and "No staff available" not in selected:
+                        st.session_state.data_manager.update_feedback(row.get('id'), {'assigned_to': selected})
+                        st.success(f"✅ Assigned to {selected}")
+                        st.rerun()
+                    else:
+                        st.error("⚠️ Please select a staff member")
+            
+            st.divider()
 
 
 def render_analytics():
@@ -1223,6 +1274,194 @@ def render_settings():
         st.write("**Environment:** Production")
 
 
+def render_staff_management():
+    """Render staff management page with CRUD operations."""
+    st.markdown('<p class="main-header">👥 Staff Management</p>', unsafe_allow_html=True)
+    
+    # Tabs for different operations
+    tab1, tab2, tab3 = st.tabs(["📋 All Staff", "➕ Add Staff", "📊 Staff Stats"])
+    
+    with tab1:
+        st.subheader("All Staff Members")
+        
+        # Get all staff (including inactive)
+        all_staff = st.session_state.data_manager.get_all_staff(active_only=False)
+        
+        if not all_staff:
+            st.info("No staff members found. Add staff members using the 'Add Staff' tab.")
+        else:
+            # Display as cards with edit/delete options
+            for staff in all_staff:
+                status_color = "#10B981" if staff['active'] == 'Active' else "#9CA3AF"
+                status_bg = "rgba(16, 185, 129, 0.1)" if staff['active'] == 'Active' else "rgba(156, 163, 175, 0.1)"
+                
+                with st.container():
+                    col1, col2, col3 = st.columns([3, 1, 1])
+                    
+                    with col1:
+                        st.markdown(f"""
+                        <div style="background: {status_bg}; padding: 1rem; border-radius: 12px; 
+                                    border-left: 4px solid {status_color}; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; color: #1f2937;">{staff['name']}</h4>
+                            <p style="margin: 0.5rem 0 0 0; color: #6b7280; font-size: 0.9rem;">
+                                📧 {staff.get('email', 'N/A')} | 📱 {staff.get('phone', 'N/A')}<br>
+                                🏢 {staff.get('department', 'N/A')} | 💼 {staff.get('role', 'N/A')}<br>
+                                <span style="background: {status_color}30; color: {status_color}; padding: 0.2rem 0.5rem; 
+                                      border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                    {staff['active']}
+                                </span>
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col2:
+                        if st.button("✏️ Edit", key=f"edit_staff_{staff['id']}", use_container_width=True):
+                            st.session_state[f"editing_staff_{staff['id']}"] = True
+                            st.rerun()
+                    
+                    with col3:
+                        if staff['active'] == 'Active':
+                            if st.button("🗑️ Deactivate", key=f"del_staff_{staff['id']}", type="secondary", use_container_width=True):
+                                st.session_state.data_manager.delete_staff(staff['id'])
+                                st.success(f"Deactivated {staff['name']}")
+                                st.rerun()
+                        else:
+                            if st.button("✅ Activate", key=f"act_staff_{staff['id']}", type="primary", use_container_width=True):
+                                st.session_state.data_manager.update_staff(staff['id'], {'active': 'Active'})
+                                st.success(f"Activated {staff['name']}")
+                                st.rerun()
+                    
+                    # Edit form (appears when edit button is clicked)
+                    if st.session_state.get(f"editing_staff_{staff['id']}", False):
+                        with st.expander("Edit Staff Details", expanded=True):
+                            with st.form(key=f"edit_form_{staff['id']}"):
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    edit_name = st.text_input("Name", value=staff['name'], key=f"edit_name_{staff['id']}")
+                                    edit_email = st.text_input("Email", value=staff.get('email', ''), key=f"edit_email_{staff['id']}")
+                                    edit_dept = st.text_input("Department", value=staff.get('department', ''), key=f"edit_dept_{staff['id']}")
+                                with col2:
+                                    edit_phone = st.text_input("Phone", value=staff.get('phone', ''), key=f"edit_phone_{staff['id']}")
+                                    edit_role = st.text_input("Role", value=staff.get('role', ''), key=f"edit_role_{staff['id']}")
+                                
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    if st.form_submit_button("💾 Save Changes", type="primary", use_container_width=True):
+                                        updates = {
+                                            'name': edit_name,
+                                            'email': edit_email,
+                                            'phone': edit_phone,
+                                            'department': edit_dept,
+                                            'role': edit_role
+                                        }
+                                        if st.session_state.data_manager.update_staff(staff['id'], updates):
+                                            st.success("✅ Staff updated successfully!")
+                                            st.session_state[f"editing_staff_{staff['id']}"] = False
+                                            st.rerun()
+                                        else:
+                                            st.error("❌ Failed to update staff")
+                                with col2:
+                                    if st.form_submit_button("Cancel", use_container_width=True):
+                                        st.session_state[f"editing_staff_{staff['id']}"] = False
+                                        st.rerun()
+    
+    with tab2:
+        st.subheader("Add New Staff Member")
+        
+        with st.form(key="add_staff_form"):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                name = st.text_input("Name *", placeholder="Enter full name")
+                email = st.text_input("Email", placeholder="staff@example.com")
+                department = st.text_input("Department", placeholder="e.g., Public Works")
+            
+            with col2:
+                phone = st.text_input("Phone", placeholder="+1234567890")
+                role = st.text_input("Role", placeholder="e.g., Field Inspector")
+            
+            if st.form_submit_button("➕ Add Staff", type="primary", use_container_width=True):
+                if not name:
+                    st.error("❌ Name is required!")
+                else:
+                    staff_data = {
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'department': department,
+                        'role': role,
+                        'active': 'Active'
+                    }
+                    staff_id = st.session_state.data_manager.add_staff(staff_data)
+                    if staff_id:
+                        st.success(f"✅ Staff member '{name}' added successfully!")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to add staff. Name or email might already exist.")
+    
+    with tab3:
+        st.subheader("Staff Statistics")
+        
+        all_staff = st.session_state.data_manager.get_all_staff(active_only=False)
+        active_staff = [s for s in all_staff if s['active'] == 'Active']
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Total Staff", len(all_staff))
+        with col2:
+            st.metric("Active Staff", len(active_staff))
+        with col3:
+            st.metric("Inactive Staff", len(all_staff) - len(active_staff))
+        
+        st.divider()
+        
+        # Staff by department
+        if active_staff:
+            departments = [s.get('department', 'Unassigned') for s in active_staff]
+            dept_counts = pd.Series(departments).value_counts()
+            
+            st.subheader("📊 Staff by Department")
+            fig = px.bar(
+                x=dept_counts.values,
+                y=dept_counts.index,
+                orientation='h',
+                color_discrete_sequence=['#3B82F6']
+            )
+            fig.update_layout(xaxis_title="Number of Staff", yaxis_title="Department", height=300)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        st.divider()
+        
+        # Workload distribution - only show staff from database
+        df = st.session_state.data_manager.get_feedback_dataframe()
+        if not df.empty and 'assigned_to' in df.columns:
+            st.subheader("📈 Current Workload Distribution")
+            
+            # Get staff names from database
+            staff_names = st.session_state.data_manager.get_staff_names(active_only=False)
+            
+            assigned = df[df['assigned_to'].notna() & (df['assigned_to'] != '')]
+            if not assigned.empty:
+                # Filter to only show staff from database
+                workload_all = assigned['assigned_to'].value_counts()
+                workload = workload_all[workload_all.index.isin(staff_names)]
+                
+                if not workload.empty:
+                    fig = px.bar(
+                        x=workload.index,
+                        y=workload.values,
+                        color_discrete_sequence=['#8B5CF6']
+                    )
+                    fig.update_layout(xaxis_title="Staff Member", yaxis_title="Assigned Feedbacks", height=300)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No assignments to registered staff members yet")
+            else:
+                st.info("No assignments yet")
+
+
 def main():
     """Main entry point for Admin Portal."""
     init_session_state()
@@ -1249,6 +1488,8 @@ def main():
         render_priority_queue()
     elif page == "Assignments":
         render_assignments()
+    elif page == "Staff Management":
+        render_staff_management()
     elif page == "Analytics":
         render_analytics()
     elif page == "Advanced Analytics":

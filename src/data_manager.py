@@ -12,7 +12,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from .database import Database
-from .db_models import Feedback
+from .db_models import Feedback, Staff
 
 
 class DataManager:
@@ -310,3 +310,124 @@ class DataManager:
             return True
         except Exception:
             return False
+    
+    # ==================== STAFF MANAGEMENT ====================
+    
+    def add_staff(self, staff_data: Dict[str, Any]) -> Optional[int]:
+        """
+        Add a new staff member.
+        
+        Args:
+            staff_data: Dictionary containing staff information
+            
+        Returns:
+            Staff ID if successful, None otherwise
+        """
+        try:
+            with Database.session_scope() as session:
+                staff = Staff.from_dict(staff_data)
+                session.add(staff)
+                session.flush()
+                return staff.id
+        except SQLAlchemyError as e:
+            print(f"Error adding staff: {e}")
+            return None
+    
+    def get_all_staff(self, active_only: bool = True) -> List[Dict[str, Any]]:
+        """
+        Get all staff members.
+        
+        Args:
+            active_only: If True, return only active staff
+            
+        Returns:
+            List of staff dictionaries
+        """
+        try:
+            with Database.session_scope() as session:
+                query = session.query(Staff)
+                if active_only:
+                    query = query.filter(Staff.active == 'Active')
+                staff_list = query.order_by(Staff.name).all()
+                return [s.to_dict() for s in staff_list]
+        except SQLAlchemyError as e:
+            print(f"Error getting staff: {e}")
+            return []
+    
+    def get_staff_by_id(self, staff_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get staff member by ID.
+        
+        Args:
+            staff_id: Staff ID
+            
+        Returns:
+            Staff dictionary or None if not found
+        """
+        try:
+            with Database.session_scope() as session:
+                staff = session.query(Staff).filter(Staff.id == staff_id).first()
+                return staff.to_dict() if staff else None
+        except SQLAlchemyError as e:
+            print(f"Error getting staff: {e}")
+            return None
+    
+    def update_staff(self, staff_id: int, updates: Dict[str, Any]) -> bool:
+        """
+        Update staff member information.
+        
+        Args:
+            staff_id: Staff ID
+            updates: Dictionary of fields to update
+            
+        Returns:
+            True if successful
+        """
+        try:
+            with Database.session_scope() as session:
+                staff = session.query(Staff).filter(Staff.id == staff_id).first()
+                if staff:
+                    for key, value in updates.items():
+                        if hasattr(staff, key):
+                            setattr(staff, key, value)
+                    staff.updated_at = datetime.utcnow()
+                    return True
+                return False
+        except SQLAlchemyError as e:
+            print(f"Error updating staff: {e}")
+            return False
+    
+    def delete_staff(self, staff_id: int) -> bool:
+        """
+        Delete staff member (soft delete - mark as inactive).
+        
+        Args:
+            staff_id: Staff ID
+            
+        Returns:
+            True if successful
+        """
+        try:
+            with Database.session_scope() as session:
+                staff = session.query(Staff).filter(Staff.id == staff_id).first()
+                if staff:
+                    staff.active = 'Inactive'
+                    staff.updated_at = datetime.utcnow()
+                    return True
+                return False
+        except SQLAlchemyError as e:
+            print(f"Error deleting staff: {e}")
+            return False
+    
+    def get_staff_names(self, active_only: bool = True) -> List[str]:
+        """
+        Get list of staff names for dropdowns.
+        
+        Args:
+            active_only: If True, return only active staff
+            
+        Returns:
+            List of staff names
+        """
+        staff_list = self.get_all_staff(active_only)
+        return [s['name'] for s in staff_list]

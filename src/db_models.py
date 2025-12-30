@@ -131,3 +131,57 @@ class Feedback(Base):
     
     def __repr__(self):
         return f"<Feedback(id='{self.id}', title='{self.title}', status='{self.status}')>"
+
+
+class Staff(Base):
+    """
+    Staff model representing staff members who can be assigned to feedback.
+    """
+    __tablename__ = "staff"
+    
+    # Primary key
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    
+    # Staff information
+    name = Column(String(200), nullable=False, unique=True, index=True)
+    email = Column(String(200), unique=True, index=True)
+    phone = Column(String(50))
+    department = Column(String(100), index=True)
+    role = Column(String(100))
+    
+    # Status
+    active = Column(String(10), default='Active', nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert model to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'phone': self.phone,
+            'department': self.department,
+            'role': self.role,
+            'active': self.active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+    @staticmethod
+    def from_dict(data: dict):
+        """Create model instance from dictionary."""
+        return Staff(
+            id=data.get('id'),
+            name=data.get('name'),
+            email=data.get('email'),
+            phone=data.get('phone'),
+            department=data.get('department'),
+            role=data.get('role'),
+            active=data.get('active', 'Active')
+        )
+    
+    def __repr__(self):
+        return f"<Staff(id={self.id}, name='{self.name}', department='{self.department}')>"
