@@ -68,6 +68,7 @@ st.markdown("""
         font-family: 'Poppins', sans-serif !important;
     }
 
+    /* Header Section */
     .main-header {
         font-family: 'Poppins', sans-serif;
         font-size: 2.2rem;
@@ -84,8 +85,119 @@ st.markdown("""
         margin-bottom: 1.1rem;
     }
 
-    .stMarkdown, .stMarkdown p, .stMarkdown li {
-        color: var(--text) !important;
+    /* Metrics/KPI Cards - Enhanced UI */
+    .metric-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #7c3aed, #a855f7);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .metric-card:hover {
+        border-color: #ddd6fe;
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .metric-card:hover::before {
+        opacity: 1;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+
+    .metric-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #1f2937;
+        font-family: 'Poppins', sans-serif;
+        line-height: 1;
+        margin-bottom: 0.75rem;
+    }
+
+    .metric-change {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #10b981;
+    }
+
+    /* Chart Cards */
+    .chart-container {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f3f4f6;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Alert Box */
+    .alert-box {
+        background: linear-gradient(135deg, #fef2f2 0%, #ffe5e5 100%);
+        border: 1.5px solid #fecdd3;
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alert-box h4 {
+        margin: 0;
+        color: #991b1b;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Data Table Enhancement */
+    .stDataFrame {
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
+    .stDataFrame tbody tr:hover {
+        background-color: #f8fafc !important;
     }
 
     /* Sidebar shell */
@@ -475,7 +587,6 @@ def render_sidebar():
             "Assignments",
             "Staff Management",
             "Analytics",
-            "Advanced Analytics",
             "Export Data",
             "Settings",
         ]
@@ -487,7 +598,6 @@ def render_sidebar():
             "people",
             "person-badge",
             "bar-chart-line",
-            "graph-up",
             "box-arrow-down",
             "gear",
         ]
@@ -543,13 +653,13 @@ def render_dashboard():
     # Hero Header
     st.markdown("""
     <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.1) 100%);
-                border-radius: 20px; padding: 2rem; margin-bottom: 2rem; text-align: center;
-                border: 1px solid rgba(139, 92, 246, 0.2);">
+                border-radius: 20px; padding: 2.5rem; margin-bottom: 2rem; 
+                border: 1.5px solid rgba(139, 92, 246, 0.2);">
         <h1 style="font-family: 'Poppins', sans-serif; font-size: 2.5rem; font-weight: 800;
                    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
                    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                   margin: 0;">📊 Admin Dashboard</h1>
-        <p style="color: rgba(148, 163, 184, 0.9); margin-top: 0.5rem; font-size: 1rem;">
+                   margin: 0 0 0.5rem 0; letter-spacing: -0.5px;">📊 Admin Dashboard</h1>
+        <p style="color: rgba(107, 114, 128, 0.9); margin: 0; font-size: 1.05rem; font-weight: 500;">
             Real-time overview of citizen feedback and system performance
         </p>
     </div>
@@ -590,13 +700,12 @@ def render_dashboard():
     for col, (icon, label, value, color, bg) in zip([col1, col2, col3, col4, col5], metrics_data):
         with col:
             st.markdown(f"""
-            <div style="background: {bg}; border-radius: 16px; padding: 1.25rem; text-align: center;
-                        border: 1px solid {color}30; transition: all 0.3s ease;">
-                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">{icon}</div>
-                <div style="font-size: 2rem; font-weight: 700; color: {color}; font-family: 'Poppins', sans-serif;">
+            <div class="metric-card" style="background: {bg}; border: 1px solid {color}30;">
+                <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">{icon}</div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: {color}; font-family: 'Poppins', sans-serif; margin-bottom: 0.5rem;">
                     {value}
                 </div>
-                <div style="font-size: 0.85rem; color: rgba(148, 163, 184, 0.9); margin-top: 0.25rem;">
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 600;">
                     {label}
                 </div>
             </div>
@@ -652,7 +761,8 @@ def render_dashboard():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📊 Status Distribution")
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">📊 Status Distribution</div>', unsafe_allow_html=True)
         if 'status' in df.columns:
             status_counts = df['status'].value_counts()
             fig = px.pie(
@@ -662,10 +772,12 @@ def render_dashboard():
                 color_discrete_sequence=['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981', '#6B7280']
             )
             fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.subheader("😊 Sentiment Analysis")
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">😊 Sentiment Analysis</div>', unsafe_allow_html=True)
         if 'sentiment' in df.columns:
             sentiment_counts = df['sentiment'].value_counts()
             colors = {'Positive': '#10B981', 'Neutral': '#F59E0B', 'Negative': '#EF4444'}
@@ -676,13 +788,15 @@ def render_dashboard():
                 color_discrete_map=colors
             )
             fig.update_layout(showlegend=False, margin=dict(l=20, r=20, t=20, b=20), height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Category and urgency charts
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📁 By Category")
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">📁 By Category</div>', unsafe_allow_html=True)
         if 'category' in df.columns:
             cat_counts = df['category'].value_counts().head(8)
             fig = px.bar(
@@ -692,10 +806,12 @@ def render_dashboard():
                 color_discrete_sequence=['#3B82F6']
             )
             fig.update_layout(showlegend=False, margin=dict(l=20, r=20, t=20, b=20), height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.subheader("⚡ By Urgency")
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">⚡ By Urgency</div>', unsafe_allow_html=True)
         if 'urgency' in df.columns:
             urgency_order = ['Low', 'Medium', 'High', 'Emergency']
             urgency_counts = df['urgency'].value_counts().reindex(urgency_order, fill_value=0)
@@ -705,8 +821,9 @@ def render_dashboard():
                 y=urgency_counts.values,
                 marker_color=colors
             )])
-            fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), height=300, showlegend=False)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_all_feedback():
@@ -1105,79 +1222,15 @@ def render_assignments():
             st.divider()
 
 
-def render_analytics():
-    """Render detailed analytics page."""
-    st.markdown('<p class="main-header">📈 Detailed Analytics</p>', unsafe_allow_html=True)
-    
-    df = st.session_state.data_manager.get_feedback_dataframe()
-    
-    if df.empty:
-        st.info("No data for analytics.")
-        return
-    
-    # Date range filter
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input("Start Date", value=datetime.now() - timedelta(days=30))
-    with col2:
-        end_date = st.date_input("End Date", value=datetime.now())
-    
-    st.divider()
-    
-    # Use dashboard component
-    st.session_state.dashboard.render_charts(df)
-    
-    st.divider()
-    
-    # Additional analytics
-    st.subheader("📊 Detailed Statistics")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("**By Category**")
-        if 'category' in df.columns:
-            st.dataframe(df['category'].value_counts(), use_container_width=True)
-    
-    with col2:
-        st.markdown("**By Urgency**")
-        if 'urgency' in df.columns:
-            st.dataframe(df['urgency'].value_counts(), use_container_width=True)
-    
-    with col3:
-        st.markdown("**By Status**")
-        if 'status' in df.columns:
-            st.dataframe(df['status'].value_counts(), use_container_width=True)
-    
-    # Resolution time analysis
-    st.divider()
-    st.subheader("⏱️ Response Metrics")
-    
-    total = len(df)
-    resolved = len(df[df['status'] == 'Resolved']) if 'status' in df else 0
-    resolution_rate = (resolved / total * 100) if total > 0 else 0
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Resolution Rate", f"{resolution_rate:.1f}%")
-    with col2:
-        negative = len(df[df['sentiment'] == 'Negative']) if 'sentiment' in df else 0
-        st.metric("Negative Feedback", negative)
-    with col3:
-        if 'sentiment_score' in df.columns:
-            avg_sentiment = df['sentiment_score'].mean()
-            st.metric("Avg Sentiment Score", f"{avg_sentiment:.2f}")
-
-
 def render_advanced_analytics():
     """Render the Advanced Analytics dashboard as a dedicated page."""
-    st.markdown('<p class="main-header">🚀 Advanced Analytics & Insights</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Comprehensive trends, SLA predictions, geospatial heatmaps, and performance metrics</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">� Analytics & Insights</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Comprehensive trends, performance metrics, and detailed feedback analysis</p>', unsafe_allow_html=True)
 
     df = st.session_state.data_manager.get_feedback_dataframe()
 
     if df.empty:
-        st.info("No data for advanced analytics.")
+        st.info("No data for analytics.")
         return
 
     st.session_state.dashboard.render_advanced_analytics_dashboard(df)
@@ -1491,8 +1544,6 @@ def main():
     elif page == "Staff Management":
         render_staff_management()
     elif page == "Analytics":
-        render_analytics()
-    elif page == "Advanced Analytics":
         render_advanced_analytics()
     elif page == "Export Data":
         render_export()
