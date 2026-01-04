@@ -14,6 +14,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from .database import Database
 from .db_models import Feedback, Staff
 
+# Try to import AI components
+try:
+    from .ai import AdvancedNLPAnalyzer, MLPredictor, OpenAIAssistant, TextEmbeddings, RecommendationEngine
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+    print("⚠️ AI components not available, using basic analysis")
+
 
 class DataManager:
     """
@@ -36,6 +44,27 @@ class DataManager:
         except Exception as e:
             print(f"✗ PostgreSQL connection failed: {e}")
             raise RuntimeError(f"Cannot initialize DataManager without PostgreSQL: {e}")
+        
+        # Initialize AI components if available
+        self.ai_components = {}
+        if AI_AVAILABLE:
+            try:
+                self.ai_components['nlp'] = AdvancedNLPAnalyzer()
+                self.ai_components['ml'] = MLPredictor()
+                self.ai_components['openai'] = OpenAIAssistant()
+                self.ai_components['embeddings'] = TextEmbeddings()
+                self.ai_components['recommendation_engine'] = RecommendationEngine(
+                    advanced_nlp=self.ai_components.get('nlp'),
+                    ml_predictor=self.ai_components.get('ml'),
+                    openai_assistant=self.ai_components.get('openai'),
+                    text_embeddings=self.ai_components.get('embeddings')
+                )
+                print("✓ AI components initialized")
+            except Exception as e:
+                print(f"⚠️ AI components initialization failed: {e}")
+                self.ai_components = {}
+        else:
+            print("ℹ️ AI components not available")
     
     def generate_id(self) -> str:
         """
@@ -431,3 +460,257 @@ class DataManager:
         """
         staff_list = self.get_all_staff(active_only)
         return [s['name'] for s in staff_list]
+    
+    # ==================== AI-POWERED METHODS ====================
+    
+    def analyze_feedback_with_ai(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Perform comprehensive AI analysis on feedback.
+        
+        Args:
+            feedback_data: Feedback dictionary
+            
+        Returns:
+            Complete AI analysis results
+        """
+        if 'recommendation_engine' not in self.ai_components:
+            # Fallback to basic analysis
+            return self._basic_feedback_analysis(feedback_data)
+        
+        try:
+            return self.ai_components['recommendation_engine'].analyze_feedback_comprehensive(feedback_data)
+        except Exception as e:
+            print(f"AI analysis failed, using basic analysis: {e}")
+            return self._basic_feedback_analysis(feedback_data)
+    
+    def _basic_feedback_analysis(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Basic feedback analysis without AI."""
+        text = feedback_data.get('feedback', '')
+        
+        # Basic sentiment analysis
+        positive_words = {'good', 'great', 'excellent', 'happy', 'satisfied'}
+        negative_words = {'bad', 'terrible', 'awful', 'angry', 'disappointed'}
+        
+        words = text.lower().split()
+        positive_count = sum(1 for word in words if word in positive_words)
+        negative_count = sum(1 for word in words if word in negative_words)
+        
+        if positive_count > negative_count:
+            sentiment = 'Positive'
+        elif negative_count > positive_count:
+            sentiment = 'Negative'
+        else:
+            sentiment = 'Neutral'
+        
+        return {
+            'feedback_id': feedback_data.get('id'),
+            'timestamp': datetime.now().isoformat(),
+            'analyses': {
+                'nlp': {
+                    'sentiment': sentiment,
+                    'sentiment_score': 0.5 if sentiment == 'Neutral' else (0.8 if sentiment == 'Positive' else 0.2),
+                    'method': 'basic'
+                }
+            },
+            'recommendations': {
+                'priority_level': feedback_data.get('urgency', 'Medium'),
+                'urgency_action': 'Standard processing',
+                'confidence_level': 'Low'
+            }
+        }
+    
+    def train_ai_models(self) -> Dict[str, Any]:
+        """
+        Train all available AI models with current data.
+        
+        Returns:
+            Training results
+        """
+        results = {'success': False, 'models_trained': [], 'errors': []}
+        
+        if not self.ai_components:
+            results['errors'].append('No AI components available')
+            return results
+        
+        # Get training data
+        feedback_data = self.get_all_feedback()
+        if len(feedback_data) < 10:
+            results['errors'].append('Insufficient data for training')
+            return results
+        
+        # Train ML models
+        if 'ml' in self.ai_components:
+            try:
+                ml_results = self.ai_components['ml'].retrain_all_models(feedback_data)
+                results['models_trained'].append('ml_models')
+                results.update(ml_results)
+            except Exception as e:
+                results['errors'].append(f'ML training failed: {e}')
+        
+        # Build embeddings index
+        if 'embeddings' in self.ai_components:
+            try:
+                success = self.ai_components['embeddings'].build_search_index(feedback_data)
+                if success:
+                    results['models_trained'].append('embeddings_index')
+                else:
+                    results['errors'].append('Embeddings index building failed')
+            except Exception as e:
+                results['errors'].append(f'Embeddings training failed: {e}')
+        
+        results['success'] = len(results['models_trained']) > 0
+        return results
+    
+    def get_ai_insights(self) -> Dict[str, Any]:
+        """
+        Get AI-powered insights from all feedback data.
+        
+        Returns:
+            Comprehensive insights
+        """
+        feedback_data = self.get_all_feedback()
+        
+        if not feedback_data:
+            return {'error': 'No feedback data available'}
+        
+        insights = {
+            'total_feedbacks': len(feedback_data),
+            'timestamp': datetime.now().isoformat(),
+            'basic_stats': self.get_statistics()
+        }
+        
+        # AI-powered insights
+        if 'recommendation_engine' in self.ai_components:
+            try:
+                bulk_analysis = self.ai_components['recommendation_engine'].analyze_bulk_feedback(feedback_data)
+                insights['ai_analysis'] = bulk_analysis
+            except Exception as e:
+                insights['ai_analysis'] = {'error': str(e)}
+        
+        # Theme analysis (OpenAI)
+        if 'openai' in self.ai_components and self.ai_components['openai'].is_available():
+            try:
+                theme_analysis = self.ai_components['openai'].analyze_feedback_themes(feedback_data)
+                insights['theme_analysis'] = theme_analysis
+            except Exception as e:
+                insights['theme_analysis'] = {'error': str(e)}
+        
+        # Embedding insights
+        if 'embeddings' in self.ai_components:
+            try:
+                embedding_insights = self.ai_components['embeddings'].get_feedback_insights()
+                insights['embedding_insights'] = embedding_insights
+            except Exception as e:
+                insights['embedding_insights'] = {'error': str(e)}
+        
+        return insights
+    
+    def semantic_search_feedback(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Perform semantic search on feedback data.
+        
+        Args:
+            query: Search query
+            top_k: Number of results
+            
+        Returns:
+            Similar feedback items
+        """
+        if 'embeddings' not in self.ai_components:
+            # Fallback to keyword search
+            return self._keyword_search_feedback(query, top_k)
+        
+        try:
+            return self.ai_components['embeddings'].semantic_search(query, top_k)
+        except Exception as e:
+            print(f"Semantic search failed, using keyword search: {e}")
+            return self._keyword_search_feedback(query, top_k)
+    
+    def _keyword_search_feedback(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Fallback keyword-based search."""
+        all_feedback = self.get_all_feedback()
+        query_lower = query.lower()
+        
+        # Simple relevance scoring
+        scored_results = []
+        for fb in all_feedback:
+            text = f"{fb.get('title', '')} {fb.get('feedback', '')}".lower()
+            score = sum(1 for word in query_lower.split() if word in text)
+            if score > 0:
+                fb_copy = fb.copy()
+                fb_copy['relevance_score'] = score
+                scored_results.append(fb_copy)
+        
+        # Sort by relevance and return top results
+        scored_results.sort(key=lambda x: x['relevance_score'], reverse=True)
+        return scored_results[:top_k]
+    
+    def generate_ai_response_suggestion(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate AI-powered response suggestion.
+        
+        Args:
+            feedback_data: Feedback data
+            
+        Returns:
+            Response suggestion
+        """
+        if 'openai' not in self.ai_components or not self.ai_components['openai'].is_available():
+            return {
+                'response': 'AI response generation not available. Please configure OpenAI API key.',
+                'method': 'unavailable'
+            }
+        
+        try:
+            return self.ai_components['openai'].generate_response_suggestion(feedback_data)
+        except Exception as e:
+            return {
+                'response': f'Error generating response: {str(e)}',
+                'method': 'error'
+            }
+    
+    def get_ai_system_health(self) -> Dict[str, Any]:
+        """
+        Get health status of AI system.
+        
+        Returns:
+            AI system health report
+        """
+        if 'recommendation_engine' not in self.ai_components:
+            return {'status': 'unavailable', 'message': 'AI components not initialized'}
+        
+        try:
+            return self.ai_components['recommendation_engine'].get_system_health()
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+    
+    def update_ai_models(self, new_feedback: List[Dict[str, Any]]) -> bool:
+        """
+        Update AI models with new feedback data.
+        
+        Args:
+            new_feedback: New feedback items
+            
+        Returns:
+            Success status
+        """
+        success = True
+        
+        # Update embeddings index
+        if 'embeddings' in self.ai_components:
+            try:
+                self.ai_components['embeddings'].update_index(new_feedback)
+            except Exception as e:
+                print(f"Embeddings update failed: {e}")
+                success = False
+        
+        # Retrain ML models if enough new data
+        if len(new_feedback) >= 10 and 'ml' in self.ai_components:
+            try:
+                all_data = self.get_all_feedback()
+                self.ai_components['ml'].retrain_all_models(all_data)
+            except Exception as e:
+                print(f"ML model update failed: {e}")
+                success = False
+        
+        return success

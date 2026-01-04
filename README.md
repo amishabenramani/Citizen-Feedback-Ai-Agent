@@ -27,11 +27,33 @@ For administrators to manage citizen feedback:
 
 ## 🤖 AI-Powered Features
 
-- **Sentiment Analysis**: Automatically detect positive, negative, or neutral feedback
-- **Keyword Extraction**: Identify key topics and themes
-- **Smart Summarization**: Generate concise summaries
-- **Urgency Detection**: Flag time-sensitive issues
-- **Category Detection**: Auto-categorize feedback
+### Advanced NLP & Machine Learning
+- **Transformer-based Sentiment Analysis**: Uses state-of-the-art BERT models for accurate emotion detection
+- **Advanced Text Summarization**: GPT-powered abstractive summarization for long feedback
+- **Intelligent Categorization**: ML-powered automatic topic classification
+- **Semantic Search**: Vector-based similarity search across all feedback
+- **Priority Prediction**: ML models trained on historical data for smart prioritization
+- **SLA Breach Forecasting**: Predictive analytics for response time management
+
+### AI Architecture
+- **Modular Design**: Individual AI components can be enabled/disabled
+- **Fallback Mechanisms**: Graceful degradation when AI services unavailable
+- **Confidence Scoring**: All AI predictions include confidence levels
+- **Real-time Processing**: Instant analysis on feedback submission
+- **Batch Processing**: Background model training and optimization
+
+### AI Components
+- **AdvancedNLPAnalyzer**: Transformer models for sentiment, summarization, categorization
+- **MLPredictor**: Scikit-learn models for priority and SLA predictions
+- **OpenAIAssistant**: GPT integration for complex analysis and recommendations
+- **TextEmbeddings**: Sentence-BERT for semantic search and similarity
+- **RecommendationEngine**: Unified AI orchestration combining all components
+
+### Configuration & Management
+- **JSON-based Configuration**: Easy AI settings management via `data/ai_config.json`
+- **Model Persistence**: Trained models saved to disk for fast loading
+- **Performance Monitoring**: Built-in metrics and health checks
+- **API Integration**: OpenAI API support with key management
 
 ## 📊 Advanced Analytics & Decision Support (NEW!)
 
@@ -164,6 +186,72 @@ streamlit run admin_portal.py --server.port 8502
 | admin | admin123 | Full Access |
 | manager | manager123 | Manager |
 | staff | staff123 | Staff |
+
+## 🧠 AI Setup & Configuration
+
+### AI Dependencies Installation
+The AI features require additional ML libraries. After basic installation:
+
+```bash
+# Install AI/ML dependencies (already included in pyproject.toml)
+uv sync
+```
+
+### AI Configuration
+Configure AI components in `data/ai_config.json`:
+
+```json
+{
+  "advanced_nlp": {
+    "enabled": true,
+    "model_name": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+    "confidence_threshold": 0.7
+  },
+  "ml_predictor": {
+    "enabled": true,
+    "model_path": "models/",
+    "auto_train": true
+  },
+  "openai_integration": {
+    "enabled": false,
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.3
+  },
+  "text_embeddings": {
+    "enabled": true,
+    "model_name": "all-MiniLM-L6-v2",
+    "index_path": "models/embeddings.index"
+  },
+  "recommendation_engine": {
+    "enabled": true,
+    "combine_results": true
+  }
+}
+```
+
+### OpenAI API Setup (Optional)
+For advanced GPT-powered features:
+
+1. Get API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Set environment variable:
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+3. Enable OpenAI features in `ai_config.json`
+
+### AI Model Training
+Train ML models with your data:
+
+```bash
+python -c "from src.data_manager import DataManager; dm = DataManager(); dm.train_ai_models()"
+```
+
+### Testing AI Features
+Run the AI test suite:
+
+```bash
+python test_ai_features.py
+```
 
 ## 💾 Database Information
 

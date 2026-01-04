@@ -6,17 +6,40 @@ keyword extraction, and summarization.
 
 import re
 from collections import Counter
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
+# Try to import advanced AI components
+try:
+    from .ai.advanced_nlp import AdvancedNLPAnalyzer
+    ADVANCED_AI_AVAILABLE = True
+except ImportError:
+    ADVANCED_AI_AVAILABLE = False
 
 class FeedbackAnalyzer:
     """
-    Analyzes citizen feedback using NLP techniques.
+    Analyzes citizen feedback using AI techniques.
     Provides sentiment analysis, keyword extraction, and summarization.
+    Uses advanced transformer models when available, falls back to rule-based analysis.
     """
     
     def __init__(self):
         """Initialize the feedback analyzer."""
+        self.advanced_analyzer = None
+        
+        # Initialize advanced AI if available
+        if ADVANCED_AI_AVAILABLE:
+            try:
+                self.advanced_analyzer = AdvancedNLPAnalyzer()
+                print("✓ Advanced AI analyzer initialized")
+            except Exception as e:
+                print(f"⚠️ Advanced AI initialization failed: {e}")
+                self.advanced_analyzer = None
+        
+        # Fallback: Basic rule-based analyzer
+        self._init_basic_analyzer()
+    
+    def _init_basic_analyzer(self):
+        """Initialize basic rule-based analyzer components."""
         # Positive words for sentiment analysis
         self.positive_words = {
             'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic',
@@ -73,6 +96,41 @@ class FeedbackAnalyzer:
     def analyze(self, text: str) -> Dict[str, Any]:
         """
         Perform comprehensive analysis on the feedback text.
+        Uses advanced AI when available, falls back to rule-based analysis.
+        
+        Args:
+            text: The feedback text to analyze
+            
+        Returns:
+            Dictionary containing sentiment, score, keywords, and summary
+        """
+        # Use advanced AI if available
+        if self.advanced_analyzer and self.advanced_analyzer.models_loaded:
+            try:
+                # Get comprehensive analysis from advanced AI
+                advanced_result = self.advanced_analyzer.analyze_comprehensive(text)
+                
+                # Format to match expected output structure
+                return {
+                    "sentiment": advanced_result['sentiment']['sentiment'],
+                    "sentiment_score": advanced_result['sentiment']['sentiment_score'],
+                    "keywords": advanced_result['summary'].get('summary', '').split()[:5] if isinstance(advanced_result['summary'].get('summary'), str) else ["general feedback"],
+                    "summary": advanced_result['summary'].get('summary', text[:100]),
+                    "method": "advanced_ai",
+                    "confidence": advanced_result['sentiment'].get('confidence', 0.5),
+                    "category": advanced_result['category'].get('category', 'General'),
+                    "entities": advanced_result['entities'].get('entities', {})
+                }
+                
+            except Exception as e:
+                print(f"Advanced AI analysis failed, falling back to basic: {e}")
+        
+        # Fallback to basic rule-based analysis
+        return self._analyze_basic(text)
+    
+    def _analyze_basic(self, text: str) -> Dict[str, Any]:
+        """
+        Basic rule-based analysis as fallback.
         
         Args:
             text: The feedback text to analyze
@@ -84,16 +142,21 @@ class FeedbackAnalyzer:
         cleaned_text = self._clean_text(text)
         words = self._tokenize(cleaned_text)
         
-        # Perform analyses
-        sentiment, sentiment_score = self._analyze_sentiment(words)
-        keywords = self._extract_keywords(words)
-        summary = self._generate_summary(text, sentiment)
+        # Perform basic analyses
+        sentiment, sentiment_score = self._analyze_sentiment_basic(words)
+        keywords = self._extract_keywords_basic(words)
+        summary = self._generate_summary_basic(text, sentiment)
+        category = self.detect_category(text)
         
         return {
             "sentiment": sentiment,
             "sentiment_score": sentiment_score,
             "keywords": keywords,
-            "summary": summary
+            "summary": summary,
+            "method": "basic_rule_based",
+            "confidence": 0.5,  # Lower confidence for basic analysis
+            "category": category,
+            "entities": {}
         }
     
     def _clean_text(self, text: str) -> str:
@@ -110,9 +173,9 @@ class FeedbackAnalyzer:
         """Tokenize text into words."""
         return text.split()
     
-    def _analyze_sentiment(self, words: List[str]) -> tuple:
+    def _analyze_sentiment_basic(self, words: List[str]) -> tuple:
         """
-        Analyze sentiment of the feedback.
+        Analyze sentiment using basic word counting.
         
         Returns:
             Tuple of (sentiment_label, sentiment_score)
@@ -141,9 +204,9 @@ class FeedbackAnalyzer:
         
         return sentiment, normalized_score
     
-    def _extract_keywords(self, words: List[str], top_n: int = 5) -> List[str]:
+    def _extract_keywords_basic(self, words: List[str], top_n: int = 5) -> List[str]:
         """
-        Extract the most important keywords from the feedback.
+        Extract the most important keywords using basic frequency analysis.
         
         Args:
             words: List of words from the feedback
@@ -166,9 +229,9 @@ class FeedbackAnalyzer:
         
         return keywords if keywords else ["general feedback"]
     
-    def _generate_summary(self, text: str, sentiment: str) -> str:
+    def _generate_summary_basic(self, text: str, sentiment: str) -> str:
         """
-        Generate a brief summary of the feedback.
+        Generate a basic summary of the feedback.
         
         Args:
             text: Original feedback text

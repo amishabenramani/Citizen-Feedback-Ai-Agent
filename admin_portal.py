@@ -824,9 +824,113 @@ def render_dashboard():
             fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), height=300, showlegend=False)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         st.markdown('</div>', unsafe_allow_html=True)
-
-
-def render_all_feedback():
+    
+    # Additional charts row - Timeline and Location
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">📈 Submissions Over Time</div>', unsafe_allow_html=True)
+        if 'timestamp' in df.columns:
+            # Convert timestamp to date and count by date
+            df['date'] = pd.to_datetime(df['timestamp']).dt.date if df['timestamp'].notna().any() else pd.to_datetime('today').date()
+            daily_counts = df.groupby('date').size().reset_index(name='count')
+            daily_counts = daily_counts.sort_values('date')
+            
+            fig = px.line(
+                daily_counts,
+                x='date',
+                y='count',
+                markers=True,
+                color_discrete_sequence=['#3B82F6']
+            )
+            fig.update_layout(
+                margin=dict(l=20, r=20, t=20, b=20), 
+                height=300,
+                xaxis_title="Date",
+                yaxis_title="Submissions"
+            )
+            fig.update_traces(mode='lines+markers')
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">📍 By Location</div>', unsafe_allow_html=True)
+        if 'location' in df.columns:
+            location_counts = df['location'].value_counts().head(10)
+            if not location_counts.empty:
+                fig = px.bar(
+                    x=location_counts.values,
+                    y=location_counts.index,
+                    orientation='h',
+                    color_discrete_sequence=['#8B5CF6']
+                )
+                fig.update_layout(
+                    showlegend=False, 
+                    margin=dict(l=20, r=20, t=20, b=20), 
+                    height=300,
+                    xaxis_title="Count",
+                    yaxis_title="Location"
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.info("No location data available")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # AI Insights charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">🤖 AI Priority Distribution</div>', unsafe_allow_html=True)
+        if 'ai_priority' in df.columns:
+            ai_priority_counts = df['ai_priority'].value_counts()
+            if not ai_priority_counts.empty:
+                priority_order = ['Low', 'Medium', 'High']
+                ai_priority_counts = ai_priority_counts.reindex(priority_order, fill_value=0)
+                colors = ['#10B981', '#F59E0B', '#EF4444']
+                
+                fig = go.Figure(data=[go.Bar(
+                    x=ai_priority_counts.index,
+                    y=ai_priority_counts.values,
+                    marker_color=colors
+                )])
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=20, b=20), 
+                    height=300, 
+                    showlegend=False,
+                    xaxis_title="AI Priority",
+                    yaxis_title="Count"
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.info("No AI priority data available")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title">🎯 AI Confidence Levels</div>', unsafe_allow_html=True)
+        if 'ai_confidence' in df.columns:
+            confidence_data = df['ai_confidence'].dropna()
+            if not confidence_data.empty:
+                # Create histogram of confidence levels
+                fig = px.histogram(
+                    confidence_data,
+                    nbins=10,
+                    color_discrete_sequence=['#6366F1']
+                )
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=20, b=20), 
+                    height=300,
+                    xaxis_title="Confidence Level",
+                    yaxis_title="Count",
+                    showlegend=False
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.info("No AI confidence data available")
+        st.markdown('</div>', unsafe_allow_html=True)
     """Render all feedback management page."""
     st.markdown('<p class="main-header">📋 All Feedback</p>', unsafe_allow_html=True)
     
@@ -872,7 +976,248 @@ def render_all_feedback():
     
     st.divider()
     
-    # Feedback list
+    # Feedback list with improved UI
+    for counter, (idx, row) in enumerate(filtered_df.iterrows()):
+        # Determine priority class and colors
+        urgency = row.get('urgency', 'Medium')
+        status = row.get('status', 'New')
+
+        if urgency == 'Emergency':
+            border_color = "#dc2626"
+            bg_color = "rgba(220, 38, 38, 0.08)"
+            priority_badge = "🚨 EMERGENCY"
+        elif urgency == 'High':
+            border_color = "#f59e0b"
+            bg_color = "rgba(245, 158, 11, 0.08)"
+            priority_badge = "⚠️ HIGH"
+        elif urgency == 'Low':
+            border_color = "#10b981"
+            bg_color = "rgba(16, 185, 129, 0.08)"
+            priority_badge = "✅ LOW"
+        else:
+            border_color = "#6b7280"
+            bg_color = "rgba(107, 114, 128, 0.08)"
+            priority_badge = "📋 MEDIUM"
+
+        # Status colors
+        status_colors = {
+            "New": ("🆕", "#dbeafe", "#1e40af"),
+            "In Review": ("👀", "#e9d5ff", "#6b21a8"),
+            "In Progress": ("🔄", "#fef3c7", "#92400e"),
+            "Resolved": ("✅", "#d1fae5", "#065f46"),
+            "Closed": ("📁", "#f3f4f6", "#374151")
+        }
+        status_emoji, status_bg, status_text = status_colors.get(status, ("📋", "#f3f4f6", "#374151"))
+
+        # Create expandable card with better layout
+        with st.container():
+            # Header row with status and priority
+            col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
+
+            with col_header1:
+                st.markdown(f"""
+                <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
+                    {row.get('title', 'Untitled')}
+                </div>
+                <div style="color: #6b7280; font-size: 0.9rem;">
+                    ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{row.get('id', 'N/A')}</code>
+                    • Submitted: {row.get('timestamp', 'N/A')[:10] if row.get('timestamp') else 'N/A'}
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_header2:
+                st.markdown(f"""
+                <div style="text-align: center;">
+                    <div style="background: {status_bg}; color: {status_text}; padding: 0.5rem 1rem;
+                               border-radius: 20px; font-weight: 600; font-size: 0.9rem; display: inline-block;">
+                        {status_emoji} {status}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col_header3:
+                st.markdown(f"""
+                <div style="text-align: center;">
+                    <div style="background: {bg_color}; color: {border_color}; padding: 0.5rem 1rem;
+                               border-radius: 20px; font-weight: 600; font-size: 0.9rem; border: 1px solid {border_color}30;
+                               display: inline-block;">
+                        {priority_badge}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Main content in a styled container
+            st.markdown(f"""
+            <div style="background: {bg_color}; border: 1px solid {border_color}30; border-radius: 12px;
+                        padding: 1.5rem; margin: 1rem 0; border-left: 4px solid {border_color};">
+            """, unsafe_allow_html=True)
+
+            # Content grid
+            col1, col2, col3 = st.columns([2, 1, 1])
+
+            with col1:
+                st.markdown("**👤 Citizen Information**")
+                st.write(f"**Name:** {row.get('name', 'Anonymous')}")
+                st.write(f"**Email:** {row.get('email', 'N/A')}")
+                st.write(f"**Phone:** {row.get('phone', 'N/A')}")
+
+                st.markdown("**📍 Location & Category**")
+                st.write(f"**Category:** {row.get('category', 'N/A')}")
+                st.write(f"**Location:** {row.get('location', 'N/A')}")
+
+            with col2:
+                st.markdown("**🤖 AI Analysis**")
+
+                # Sentiment with emoji
+                sentiment = row.get('sentiment', 'N/A')
+                sentiment_emojis = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😟'}
+                sentiment_emoji = sentiment_emojis.get(sentiment, '📝')
+                st.write(f"**Sentiment:** {sentiment_emoji} {sentiment}")
+
+                # AI Priority
+                ai_priority = row.get('ai_priority', 'N/A')
+                priority_emojis = {'High': '🔴', 'Medium': '🟡', 'Low': '🟢'}
+                priority_emoji = priority_emojis.get(ai_priority, '⚪')
+                st.write(f"**AI Priority:** {priority_emoji} {ai_priority}")
+
+                # Confidence score
+                confidence = row.get('ai_confidence')
+                if confidence is not None:
+                    conf_pct = int(confidence * 100)
+                    st.progress(conf_pct / 100, text=f"Confidence: {conf_pct}%")
+
+            with col3:
+                st.markdown("**📊 Quick Stats**")
+
+                # Keywords count
+                keywords = row.get('keywords', [])
+                if isinstance(keywords, list):
+                    st.write(f"**Keywords:** {len(keywords)} detected")
+                else:
+                    st.write("**Keywords:** N/A")
+
+                # AI Category
+                ai_category = row.get('ai_category', 'N/A')
+                st.write(f"**AI Category:** {ai_category}")
+
+                # Assignment status
+                assigned = row.get('assigned_to', 'Unassigned')
+                if assigned != 'Unassigned':
+                    st.write(f"**Assigned:** ✅ {assigned}")
+                else:
+                    st.write("**Assigned:** ❌ Unassigned")
+
+            # Feedback content in expandable section
+            with st.expander("📝 View Full Feedback Content"):
+                st.write("**Description:**")
+                st.write(row.get('feedback', 'No content provided'))
+
+                if row.get('ai_summary'):
+                    st.write("**AI Summary:**")
+                    st.info(row['ai_summary'])
+
+                if row.get('ai_keywords') and isinstance(row['ai_keywords'], list) and row['ai_keywords']:
+                    st.write("**AI-Detected Topics:**")
+                    topics_html = " ".join([f'<span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; margin: 2px; display: inline-block; font-size: 0.85rem;">{topic}</span>' for topic in row['ai_keywords'][:10]])
+                    st.markdown(f'<div style="margin-top: 0.5rem;">{topics_html}</div>', unsafe_allow_html=True)
+
+            # Admin notes section
+            if row.get('admin_notes'):
+                st.markdown("**📋 Admin Response:**")
+                st.success(row['admin_notes'])
+
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Action buttons
+            col_actions1, col_actions2, col_actions3, col_actions4 = st.columns(4)
+            
+            with col_actions1:
+                if st.button("👀 View Details", key=f"view_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+                    st.session_state.selected_feedback = row.get('id')
+                    st.rerun()
+            
+            with col_actions2:
+                if st.button("✏️ Update Status", key=f"update_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+                    st.session_state.editing_feedback = row.get('id')
+                    st.rerun()
+            
+            with col_actions3:
+                if st.button("👤 Assign", key=f"assign_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+                    st.session_state.assigning_feedback = row.get('id')
+                    st.rerun()
+            
+            with col_actions4:
+                if st.button("📧 Respond", key=f"respond_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+                    st.session_state.responding_feedback = row.get('id')
+                    st.rerun()
+            
+            st.divider()
+
+def render_all_feedback():
+    """Render all feedback management page."""
+    st.markdown('<p class="main-header">📋 All Feedback</p>', unsafe_allow_html=True)
+
+    df = st.session_state.data_manager.get_feedback_dataframe()
+
+    if df.empty:
+        st.info("No feedback available.")
+        return
+
+    # Add filters
+    st.markdown("### 🔍 Filters")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        status_filter = st.multiselect(
+            "Status",
+            options=["New", "In Review", "In Progress", "Resolved", "Closed"],
+            default=[],
+            key="status_filter"
+        )
+
+    with col2:
+        urgency_filter = st.multiselect(
+            "Priority",
+            options=["Low", "Medium", "High", "Emergency"],
+            default=[],
+            key="urgency_filter"
+        )
+
+    with col3:
+        category_filter = st.multiselect(
+            "Category",
+            options=df['category'].dropna().unique().tolist() if 'category' in df.columns else [],
+            default=[],
+            key="category_filter"
+        )
+
+    with col4:
+        assigned_filter = st.multiselect(
+            "Assigned To",
+            options=df['assigned_to'].dropna().unique().tolist() if 'assigned_to' in df.columns else [],
+            default=[],
+            key="assigned_filter"
+        )
+
+    # Apply filters
+    filtered_df = df.copy()
+
+    if status_filter:
+        filtered_df = filtered_df[filtered_df['status'].isin(status_filter)]
+
+    if urgency_filter:
+        filtered_df = filtered_df[filtered_df['urgency'].isin(urgency_filter)]
+
+    if category_filter:
+        filtered_df = filtered_df[filtered_df['category'].isin(category_filter)]
+
+    if assigned_filter:
+        filtered_df = filtered_df[filtered_df['assigned_to'].isin(assigned_filter)]
+
+    st.markdown(f"**Showing {len(filtered_df)} of {len(df)} feedback items**")
+
+    # Simple feedback list
     for idx, row in filtered_df.iterrows():
         # Determine priority class
         urgency = row.get('urgency', 'Medium')
@@ -884,10 +1229,10 @@ def render_all_feedback():
             priority_class = 'priority-low'
         else:
             priority_class = 'priority-normal'
-        
+
         with st.expander(f"**{row.get('id', 'N/A')}** - {row.get('title', 'Untitled')} [{row.get('status', 'New')}]"):
             col1, col2 = st.columns([2, 1])
-            
+
             with col1:
                 st.markdown("**📋 Feedback Details**")
                 st.write(f"**ID:** `{row.get('id', 'N/A')}`")
@@ -896,23 +1241,73 @@ def render_all_feedback():
                 st.write(f"**Category:** {row.get('category', 'N/A')}")
                 st.write(f"**Location:** {row.get('location', 'N/A')}")
                 st.write(f"**Submitted:** {row.get('timestamp', 'N/A')[:16] if row.get('timestamp') else 'N/A'}")
-                
+
                 st.divider()
-                
+
                 st.markdown("**📝 Feedback Content**")
                 st.write(row.get('feedback', 'No content'))
-                
+
                 st.divider()
-                
+
                 st.markdown("**🤖 AI Analysis**")
+
+                # Basic Analysis
                 sentiment_emoji = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😟'}
-                st.write(f"**Sentiment:** {sentiment_emoji.get(row.get('sentiment', ''), '📝')} {row.get('sentiment', 'N/A')} (Score: {row.get('sentiment_score', 0):.2f})")
+                st.write(f"**Basic Sentiment:** {sentiment_emoji.get(row.get('sentiment', ''), '📝')} {row.get('sentiment', 'N/A')} (Score: {row.get('sentiment_score', 0):.2f})")
                 st.write(f"**Keywords:** {', '.join(row.get('keywords', [])) if isinstance(row.get('keywords'), list) else row.get('keywords', 'N/A')}")
                 st.write(f"**Summary:** {row.get('summary', 'N/A')}")
-            
+
+                st.divider()
+
+                # Advanced AI Analysis
+                if row.get('ai_sentiment') or row.get('ai_confidence'):
+                    st.markdown("**🚀 Advanced AI Analysis**")
+
+                    col_ai1, col_ai2 = st.columns(2)
+
+                    with col_ai1:
+                        ai_sentiment = row.get('ai_sentiment', 'N/A')
+                        ai_sentiment_emoji = {'Positive': '🟢', 'Neutral': '🟡', 'Negative': '🔴'}
+                        st.write(f"**AI Sentiment:** {ai_sentiment_emoji.get(ai_sentiment, '⚪')} {ai_sentiment}")
+
+                        ai_priority = row.get('ai_priority', 'N/A')
+                        ai_priority_emoji = {'High': '🔴', 'Medium': '🟡', 'Low': '🟢'}
+                        st.write(f"**AI Priority:** {ai_priority_emoji.get(ai_priority, '⚪')} {ai_priority}")
+
+                    with col_ai2:
+                        ai_confidence = row.get('ai_confidence')
+                        if ai_confidence is not None:
+                            confidence_pct = int(ai_confidence * 100)
+                            st.progress(confidence_pct / 100, text=f"Confidence: {confidence_pct}%")
+                        else:
+                            st.write("**Confidence:** N/A")
+
+                        ai_category = row.get('ai_category', 'N/A')
+                        st.write(f"**AI Category:** 📁 {ai_category}")
+
+                    # AI Summary and Keywords
+                    if row.get('ai_summary'):
+                        with st.expander("📝 AI Summary"):
+                            st.write(row['ai_summary'])
+
+                    if row.get('ai_keywords') and isinstance(row['ai_keywords'], list) and row['ai_keywords']:
+                        with st.expander("🏷️ AI-Detected Topics"):
+                            st.write(", ".join(row['ai_keywords'][:15]))  # Show top 15
+
             with col2:
-                st.markdown("**⚙️ Admin Actions**")
-                
+                st.markdown("**📊 Current Status**")
+                st.write(f"**Status:** {row.get('status', 'New')}")
+                st.write(f"**Urgency:** {row.get('urgency', 'Medium')}")
+                if row.get('assigned_to'):
+                    st.write(f"**Assigned To:** {row.get('assigned_to')}")
+                if row.get('admin_notes'):
+                    st.info(f"**Admin Response:** {row.get('admin_notes')}")
+
+                st.divider()
+
+                # Quick Actions
+                st.markdown("**⚡ Quick Actions**")
+
                 # Status update
                 current_status = row.get('status', 'New')
                 new_status = st.selectbox(
@@ -921,7 +1316,7 @@ def render_all_feedback():
                     index=["New", "In Review", "In Progress", "Resolved", "Closed"].index(current_status),
                     key=f"status_{row.get('id', idx)}"
                 )
-                
+
                 # Priority
                 current_priority = row.get('priority', 'Normal')
                 priority_options = ["Low", "Normal", "High", "Critical"]
@@ -931,17 +1326,17 @@ def render_all_feedback():
                     index=priority_options.index(current_priority) if current_priority in priority_options else 1,
                     key=f"priority_{row.get('id', idx)}"
                 )
-                
+
                 # Assignment - Get staff from database
                 staff_names = st.session_state.data_manager.get_staff_names(active_only=True)
                 current_assigned = row.get('assigned_to', '')
-                
+
                 if staff_names:
                     # Use selectbox with staff from database
                     staff_options = ["None"] + staff_names
                     if current_assigned and current_assigned not in staff_options:
                         staff_options.insert(1, current_assigned)
-                    
+
                     default_index = staff_options.index(current_assigned) if current_assigned in staff_options else 0
                     assigned = st.selectbox(
                         "Assign To",
@@ -959,76 +1354,49 @@ def render_all_feedback():
                         placeholder="Add staff in Staff Management first",
                         key=f"assign_{row.get('id', idx)}"
                     )
-                
-                # Admin notes
-                notes = st.text_area(
+
+                # Admin Notes
+                admin_notes = st.text_area(
                     "Admin Notes/Response",
                     value=row.get('admin_notes', ''),
                     placeholder="Add notes or response for citizen...",
                     key=f"notes_{row.get('id', idx)}"
                 )
-                
+
                 # Save button with workflow validation
                 if st.button("💾 Save Changes", key=f"save_{row.get('id', idx)}", use_container_width=True):
                     # Workflow validation: Only allow In Progress/Resolved/Closed if assigned
                     if new_status in ["In Progress", "Resolved", "Closed"] and (not assigned or assigned == "None"):
                         st.error(f"❌ Cannot mark as '{new_status}' without assigning to staff. Please select a staff member first.")
                     else:
+                        # Update the feedback
                         updates = {
                             'status': new_status,
                             'priority': new_priority,
                             'assigned_to': assigned,
-                            'admin_notes': notes
+                            'admin_notes': admin_notes,
+                            'updated_at': datetime.now().isoformat()
                         }
-                        st.session_state.data_manager.update_feedback(row.get('id'), updates)
-                        st.success(f"✅ Feedback updated!")
-                        
-                        # If resolved, notify n8n
-                        if new_status == 'Resolved':
-                            updated = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
-                            if updated:
-                                # Ensure required fields for n8n
-                                if 'updated_at' not in updated or not updated.get('updated_at'):
-                                    from datetime import datetime
-                                    updated['updated_at'] = datetime.now().isoformat()
-                                if 'admin_notes' not in updated or not updated.get('admin_notes'):
-                                    updated['admin_notes'] = notes if notes else 'Resolved by admin'
-                                if 'assigned_to' not in updated or not updated.get('assigned_to'):
-                                    updated['assigned_to'] = assigned if assigned else 'City Admin'
-                                
-                                # CRITICAL: Ensure citizen email and name are present
-                                if not updated.get('citizen_email'):
-                                    updated['citizen_email'] = updated.get('email', '')
-                                if not updated.get('citizen_name'):
-                                    updated['citizen_name'] = updated.get('name', 'Anonymous')
-                            
-                            # Validate email exists before sending to n8n
-                            if not updated.get('citizen_email'):
-                                st.error("❌ Cannot send email: Citizen email address is missing in feedback data!")
-                                print(f"[ERROR] Missing citizen_email for feedback {row.get('id')}")
-                            else:
-                                try:
-                                    print(f"[DEBUG] Sending resolution for {row.get('id')}")
-                                    print(f"[DEBUG] citizen_email: '{updated.get('citizen_email')}'")
-                                    print(f"[DEBUG] citizen_name: '{updated.get('citizen_name')}'")
-                                    result = send_feedback_resolved(updated)
-                                    print(f"[DEBUG] Resolution result: {result}")
-                                    if result:
-                                        st.success("✅ Changes saved and email sent to citizen!")
-                                    else:
-                                        st.warning("✅ Changes saved but email notification had an issue. Check logs.")
-                                except Exception as e:
-                                    print(f"[ERROR] Resolution email error: {e}")
-                                    st.error(f"❌ Error sending resolution email: {e}")
-                    st.rerun()
-                
+
+                        success = st.session_state.data_manager.update_feedback(row.get('id'), updates)
+                        if success:
+                            # Send notification if resolved
+                            if new_status == "Resolved":
+                                # Get updated feedback data for n8n notification
+                                updated_feedback = st.session_state.data_manager.get_feedback_by_id(row.get('id'))
+                                if updated_feedback:
+                                    send_feedback_resolved(updated_feedback)
+
+                            st.success("✅ Feedback updated successfully!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Failed to update feedback.")
+
                 # Delete button
-                if st.button("🗑️ Delete", key=f"delete_{row.get('id', idx)}", type="secondary", use_container_width=True):
+                if st.button("�️ Delete", key=f"delete_{row.get('id', idx)}", type="secondary", use_container_width=True):
                     st.session_state.data_manager.delete_feedback(row.get('id'))
                     st.warning("Feedback deleted")
                     st.rerun()
-
-
 def render_priority_queue():
     """Render priority queue for urgent items."""
     st.markdown('<p class="main-header">🚨 Priority Queue</p>', unsafe_allow_html=True)
