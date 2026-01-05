@@ -878,280 +878,280 @@ def render_dashboard():
                 st.info("No location data available")
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # AI Insights charts
-    col1, col2 = st.columns(2)
+    # # AI Insights charts
+    # col1, col2 = st.columns(2)
     
-    with col1:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown('<div class="chart-title">🤖 AI Priority Distribution</div>', unsafe_allow_html=True)
-        if 'ai_priority' in df.columns:
-            ai_priority_counts = df['ai_priority'].value_counts()
-            if not ai_priority_counts.empty:
-                priority_order = ['Low', 'Medium', 'High']
-                ai_priority_counts = ai_priority_counts.reindex(priority_order, fill_value=0)
-                colors = ['#10B981', '#F59E0B', '#EF4444']
+    # with col1:
+    #     st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    #     st.markdown('<div class="chart-title">🤖 AI Priority Distribution</div>', unsafe_allow_html=True)
+    #     if 'ai_priority' in df.columns:
+    #         ai_priority_counts = df['ai_priority'].value_counts()
+    #         if not ai_priority_counts.empty:
+    #             priority_order = ['Low', 'Medium', 'High']
+    #             ai_priority_counts = ai_priority_counts.reindex(priority_order, fill_value=0)
+    #             colors = ['#10B981', '#F59E0B', '#EF4444']
                 
-                fig = go.Figure(data=[go.Bar(
-                    x=ai_priority_counts.index,
-                    y=ai_priority_counts.values,
-                    marker_color=colors
-                )])
-                fig.update_layout(
-                    margin=dict(l=20, r=20, t=20, b=20), 
-                    height=300, 
-                    showlegend=False,
-                    xaxis_title="AI Priority",
-                    yaxis_title="Count"
-                )
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            else:
-                st.info("No AI priority data available")
-        st.markdown('</div>', unsafe_allow_html=True)
+    #             fig = go.Figure(data=[go.Bar(
+    #                 x=ai_priority_counts.index,
+    #                 y=ai_priority_counts.values,
+    #                 marker_color=colors
+    #             )])
+    #             fig.update_layout(
+    #                 margin=dict(l=20, r=20, t=20, b=20), 
+    #                 height=300, 
+    #                 showlegend=False,
+    #                 xaxis_title="AI Priority",
+    #                 yaxis_title="Count"
+    #             )
+    #             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    #         else:
+    #             st.info("No AI priority data available")
+    #     st.markdown('</div>', unsafe_allow_html=True)
     
-    with col2:
-        st.markdown('<div class="chart-container">', unsafe_allow_html=True)
-        st.markdown('<div class="chart-title">🎯 AI Confidence Levels</div>', unsafe_allow_html=True)
-        if 'ai_confidence' in df.columns:
-            confidence_data = df['ai_confidence'].dropna()
-            if not confidence_data.empty:
-                # Create histogram of confidence levels
-                fig = px.histogram(
-                    confidence_data,
-                    nbins=10,
-                    color_discrete_sequence=['#6366F1']
-                )
-                fig.update_layout(
-                    margin=dict(l=20, r=20, t=20, b=20), 
-                    height=300,
-                    xaxis_title="Confidence Level",
-                    yaxis_title="Count",
-                    showlegend=False
-                )
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            else:
-                st.info("No AI confidence data available")
-        st.markdown('</div>', unsafe_allow_html=True)
-    """Render all feedback management page."""
-    st.markdown('<p class="main-header">📋 All Feedback</p>', unsafe_allow_html=True)
+    # with col2:
+    #     st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+    #     st.markdown('<div class="chart-title">🎯 AI Confidence Levels</div>', unsafe_allow_html=True)
+    #     if 'ai_confidence' in df.columns:
+    #         confidence_data = df['ai_confidence'].dropna()
+    #         if not confidence_data.empty:
+    #             # Create histogram of confidence levels
+    #             fig = px.histogram(
+    #                 confidence_data,
+    #                 nbins=10,
+    #                 color_discrete_sequence=['#6366F1']
+    #             )
+    #             fig.update_layout(
+    #                 margin=dict(l=20, r=20, t=20, b=20), 
+    #                 height=300,
+    #                 xaxis_title="Confidence Level",
+    #                 yaxis_title="Count",
+    #                 showlegend=False 
+    #             )
+    #             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    #         else:
+    #             st.info("No AI confidence data available")
+    #     st.markdown('</div>', unsafe_allow_html=True)
+    # """Render all feedback management page."""
+    # st.markdown('<p class="main-header">📋 All Feedback</p>', unsafe_allow_html=True)
     
-    df = st.session_state.data_manager.get_feedback_dataframe()
+    # df = st.session_state.data_manager.get_feedback_dataframe()
     
-    if df.empty:
-        st.info("No feedback available.")
-        return
+    # if df.empty:
+    #     st.info("No feedback available.")
+    #     return
     
-    # Filters
-    st.subheader("🔍 Filters")
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # # Filters
+    # st.subheader("🔍 Filters")
+    # col1, col2, col3, col4, col5 = st.columns(5)
     
-    with col1:
-        status_filter = st.multiselect("Status", df['status'].unique().tolist() if 'status' in df else [])
-    with col2:
-        category_filter = st.multiselect("Category", df['category'].unique().tolist() if 'category' in df else [])
-    with col3:
-        urgency_filter = st.multiselect("Urgency", df['urgency'].unique().tolist() if 'urgency' in df else [])
-    with col4:
-        sentiment_filter = st.multiselect("Sentiment", df['sentiment'].unique().tolist() if 'sentiment' in df else [])
-    with col5:
-        search = st.text_input("🔍 Search", placeholder="Search by title or ID...")
+    # with col1:
+    #     status_filter = st.multiselect("Status", df['status'].unique().tolist() if 'status' in df else [])
+    # with col2:
+    #     category_filter = st.multiselect("Category", df['category'].unique().tolist() if 'category' in df else [])
+    # with col3:
+    #     urgency_filter = st.multiselect("Urgency", df['urgency'].unique().tolist() if 'urgency' in df else [])
+    # with col4:
+    #     sentiment_filter = st.multiselect("Sentiment", df['sentiment'].unique().tolist() if 'sentiment' in df else [])
+    # with col5:
+    #     search = st.text_input("🔍 Search", placeholder="Search by title or ID...")
     
-    # Apply filters
-    filtered_df = df.copy()
-    if status_filter:
-        filtered_df = filtered_df[filtered_df['status'].isin(status_filter)]
-    if category_filter:
-        filtered_df = filtered_df[filtered_df['category'].isin(category_filter)]
-    if urgency_filter:
-        filtered_df = filtered_df[filtered_df['urgency'].isin(urgency_filter)]
-    if sentiment_filter:
-        filtered_df = filtered_df[filtered_df['sentiment'].isin(sentiment_filter)]
-    if search:
-        mask = (
-            filtered_df['title'].str.contains(search, case=False, na=False) |
-            filtered_df['id'].str.contains(search, case=False, na=False)
-        )
-        filtered_df = filtered_df[mask]
+    # # Apply filters
+    # filtered_df = df.copy()
+    # if status_filter:
+    #     filtered_df = filtered_df[filtered_df['status'].isin(status_filter)]
+    # if category_filter:
+    #     filtered_df = filtered_df[filtered_df['category'].isin(category_filter)]
+    # if urgency_filter:
+    #     filtered_df = filtered_df[filtered_df['urgency'].isin(urgency_filter)]
+    # if sentiment_filter:
+    #     filtered_df = filtered_df[filtered_df['sentiment'].isin(sentiment_filter)]
+    # if search:
+    #     mask = (
+    #         filtered_df['title'].str.contains(search, case=False, na=False) |
+    #         filtered_df['id'].str.contains(search, case=False, na=False)
+    #     )
+    #     filtered_df = filtered_df[mask]
     
-    st.caption(f"Showing {len(filtered_df)} of {len(df)} items")
+    # st.caption(f"Showing {len(filtered_df)} of {len(df)} items")
     
-    st.divider()
+    # st.divider()
     
-    # Feedback list with improved UI
-    for counter, (idx, row) in enumerate(filtered_df.iterrows()):
-        # Determine priority class and colors
-        urgency = row.get('urgency', 'Medium')
-        status = row.get('status', 'New')
+    # # Feedback list with improved UI
+    # for counter, (idx, row) in enumerate(filtered_df.iterrows()):
+    #     # Determine priority class and colors
+    #     urgency = row.get('urgency', 'Medium')
+    #     status = row.get('status', 'New')
 
-        if urgency == 'Emergency':
-            border_color = "#dc2626"
-            bg_color = "rgba(220, 38, 38, 0.08)"
-            priority_badge = "🚨 EMERGENCY"
-        elif urgency == 'High':
-            border_color = "#f59e0b"
-            bg_color = "rgba(245, 158, 11, 0.08)"
-            priority_badge = "⚠️ HIGH"
-        elif urgency == 'Low':
-            border_color = "#10b981"
-            bg_color = "rgba(16, 185, 129, 0.08)"
-            priority_badge = "✅ LOW"
-        else:
-            border_color = "#6b7280"
-            bg_color = "rgba(107, 114, 128, 0.08)"
-            priority_badge = "📋 MEDIUM"
+    #     if urgency == 'Emergency':
+    #         border_color = "#dc2626"
+    #         bg_color = "rgba(220, 38, 38, 0.08)"
+    #         priority_badge = "🚨 EMERGENCY"
+    #     elif urgency == 'High':
+    #         border_color = "#f59e0b"
+    #         bg_color = "rgba(245, 158, 11, 0.08)"
+    #         priority_badge = "⚠️ HIGH"
+    #     elif urgency == 'Low':
+    #         border_color = "#10b981"
+    #         bg_color = "rgba(16, 185, 129, 0.08)"
+    #         priority_badge = "✅ LOW"
+    #     else:
+    #         border_color = "#6b7280"
+    #         bg_color = "rgba(107, 114, 128, 0.08)"
+    #         priority_badge = "📋 MEDIUM"
 
-        # Status colors
-        status_colors = {
-            "New": ("🆕", "#dbeafe", "#1e40af"),
-            "In Review": ("👀", "#e9d5ff", "#6b21a8"),
-            "In Progress": ("🔄", "#fef3c7", "#92400e"),
-            "Resolved": ("✅", "#d1fae5", "#065f46"),
-            "Closed": ("📁", "#f3f4f6", "#374151")
-        }
-        status_emoji, status_bg, status_text = status_colors.get(status, ("📋", "#f3f4f6", "#374151"))
+    #     # Status colors
+    #     status_colors = {
+    #         "New": ("🆕", "#dbeafe", "#1e40af"),
+    #         "In Review": ("👀", "#e9d5ff", "#6b21a8"),
+    #         "In Progress": ("🔄", "#fef3c7", "#92400e"),
+    #         "Resolved": ("✅", "#d1fae5", "#065f46"),
+    #         "Closed": ("📁", "#f3f4f6", "#374151")
+    #     }
+    #     status_emoji, status_bg, status_text = status_colors.get(status, ("📋", "#f3f4f6", "#374151"))
 
-        # Create expandable card with better layout
-        with st.container():
-            # Header row with status and priority
-            col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
+    #     # Create expandable card with better layout
+    #     with st.container():
+    #         # Header row with status and priority
+    #         col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
 
-            with col_header1:
-                st.markdown(f"""
-                <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
-                    {row.get('title', 'Untitled')}
-                </div>
-                <div style="color: #6b7280; font-size: 0.9rem;">
-                    ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{row.get('id', 'N/A')}</code>
-                    • Submitted: {row.get('timestamp', 'N/A')[:10] if row.get('timestamp') else 'N/A'}
-                </div>
-                """, unsafe_allow_html=True)
+    #         with col_header1:
+    #             st.markdown(f"""
+    #             <div style="font-size: 1.1rem; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
+    #                 {row.get('title', 'Untitled')}
+    #             </div>
+    #             <div style="color: #6b7280; font-size: 0.9rem;">
+    #                 ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">{row.get('id', 'N/A')}</code>
+    #                 • Submitted: {row.get('timestamp', 'N/A')[:10] if row.get('timestamp') else 'N/A'}
+    #             </div>
+    #             """, unsafe_allow_html=True)
 
-            with col_header2:
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <div style="background: {status_bg}; color: {status_text}; padding: 0.5rem 1rem;
-                               border-radius: 20px; font-weight: 600; font-size: 0.9rem; display: inline-block;">
-                        {status_emoji} {status}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+    #         with col_header2:
+    #             st.markdown(f"""
+    #             <div style="text-align: center;">
+    #                 <div style="background: {status_bg}; color: {status_text}; padding: 0.5rem 1rem;
+    #                            border-radius: 20px; font-weight: 600; font-size: 0.9rem; display: inline-block;">
+    #                     {status_emoji} {status}
+    #                 </div>
+    #             </div>
+    #             """, unsafe_allow_html=True)
 
-            with col_header3:
-                st.markdown(f"""
-                <div style="text-align: center;">
-                    <div style="background: {bg_color}; color: {border_color}; padding: 0.5rem 1rem;
-                               border-radius: 20px; font-weight: 600; font-size: 0.9rem; border: 1px solid {border_color}30;
-                               display: inline-block;">
-                        {priority_badge}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+    #         with col_header3:
+    #             st.markdown(f"""
+    #             <div style="text-align: center;">
+    #                 <div style="background: {bg_color}; color: {border_color}; padding: 0.5rem 1rem;
+    #                            border-radius: 20px; font-weight: 600; font-size: 0.9rem; border: 1px solid {border_color}30;
+    #                            display: inline-block;">
+    #                     {priority_badge}
+    #                 </div>
+    #             </div>
+    #             """, unsafe_allow_html=True)
 
-            # Main content in a styled container
-            st.markdown(f"""
-            <div style="background: {bg_color}; border: 1px solid {border_color}30; border-radius: 12px;
-                        padding: 1.5rem; margin: 1rem 0; border-left: 4px solid {border_color};">
-            """, unsafe_allow_html=True)
+    #         # Main content in a styled container
+    #         st.markdown(f"""
+    #         <div style="background: {bg_color}; border: 1px solid {border_color}30; border-radius: 12px;
+    #                     padding: 1.5rem; margin: 1rem 0; border-left: 4px solid {border_color};">
+    #         """, unsafe_allow_html=True)
 
-            # Content grid
-            col1, col2, col3 = st.columns([2, 1, 1])
+    #         # Content grid
+    #         col1, col2, col3 = st.columns([2, 1, 1])
 
-            with col1:
-                st.markdown("**👤 Citizen Information**")
-                st.write(f"**Name:** {row.get('name', 'Anonymous')}")
-                st.write(f"**Email:** {row.get('email', 'N/A')}")
-                st.write(f"**Phone:** {row.get('phone', 'N/A')}")
+    #         with col1:
+    #             st.markdown("**👤 Citizen Information**")
+    #             st.write(f"**Name:** {row.get('name', 'Anonymous')}")
+    #             st.write(f"**Email:** {row.get('email', 'N/A')}")
+    #             st.write(f"**Phone:** {row.get('phone', 'N/A')}")
 
-                st.markdown("**📍 Location & Category**")
-                st.write(f"**Category:** {row.get('category', 'N/A')}")
-                st.write(f"**Location:** {row.get('location', 'N/A')}")
+    #             st.markdown("**📍 Location & Category**")
+    #             st.write(f"**Category:** {row.get('category', 'N/A')}")
+    #             st.write(f"**Location:** {row.get('location', 'N/A')}")
 
-            with col2:
-                st.markdown("**🤖 AI Analysis**")
+    #         with col2:
+    #             st.markdown("**🤖 AI Analysis**")
 
-                # Sentiment with emoji
-                sentiment = row.get('sentiment', 'N/A')
-                sentiment_emojis = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😟'}
-                sentiment_emoji = sentiment_emojis.get(sentiment, '📝')
-                st.write(f"**Sentiment:** {sentiment_emoji} {sentiment}")
+    #             # Sentiment with emoji
+    #             sentiment = row.get('sentiment', 'N/A')
+    #             sentiment_emojis = {'Positive': '😊', 'Neutral': '😐', 'Negative': '😟'}
+    #             sentiment_emoji = sentiment_emojis.get(sentiment, '📝')
+    #             st.write(f"**Sentiment:** {sentiment_emoji} {sentiment}")
 
-                # AI Priority
-                ai_priority = row.get('ai_priority', 'N/A')
-                priority_emojis = {'High': '🔴', 'Medium': '🟡', 'Low': '🟢'}
-                priority_emoji = priority_emojis.get(ai_priority, '⚪')
-                st.write(f"**AI Priority:** {priority_emoji} {ai_priority}")
+    #             # AI Priority
+    #             ai_priority = row.get('ai_priority', 'N/A')
+    #             priority_emojis = {'High': '🔴', 'Medium': '🟡', 'Low': '🟢'}
+    #             priority_emoji = priority_emojis.get(ai_priority, '⚪')
+    #             st.write(f"**AI Priority:** {priority_emoji} {ai_priority}")
 
-                # Confidence score
-                confidence = row.get('ai_confidence')
-                if confidence is not None:
-                    conf_pct = int(confidence * 100)
-                    st.progress(conf_pct / 100, text=f"Confidence: {conf_pct}%")
+    #             # Confidence score
+    #             confidence = row.get('ai_confidence')
+    #             if confidence is not None:
+    #                 conf_pct = int(confidence * 100)
+    #                 st.progress(conf_pct / 100, text=f"Confidence: {conf_pct}%")
 
-            with col3:
-                st.markdown("**📊 Quick Stats**")
+    #         with col3:
+    #             st.markdown("**📊 Quick Stats**")
 
-                # Keywords count
-                keywords = row.get('keywords', [])
-                if isinstance(keywords, list):
-                    st.write(f"**Keywords:** {len(keywords)} detected")
-                else:
-                    st.write("**Keywords:** N/A")
+    #             # Keywords count
+    #             keywords = row.get('keywords', [])
+    #             if isinstance(keywords, list):
+    #                 st.write(f"**Keywords:** {len(keywords)} detected")
+    #             else:
+    #                 st.write("**Keywords:** N/A")
 
-                # AI Category
-                ai_category = row.get('ai_category', 'N/A')
-                st.write(f"**AI Category:** {ai_category}")
+    #             # AI Category
+    #             ai_category = row.get('ai_category', 'N/A')
+    #             st.write(f"**AI Category:** {ai_category}")
 
-                # Assignment status
-                assigned = row.get('assigned_to', 'Unassigned')
-                if assigned != 'Unassigned':
-                    st.write(f"**Assigned:** ✅ {assigned}")
-                else:
-                    st.write("**Assigned:** ❌ Unassigned")
+    #             # Assignment status
+    #             assigned = row.get('assigned_to', 'Unassigned')
+    #             if assigned != 'Unassigned':
+    #                 st.write(f"**Assigned:** ✅ {assigned}")
+    #             else:
+    #                 st.write("**Assigned:** ❌ Unassigned")
 
-            # Feedback content in expandable section
-            with st.expander("📝 View Full Feedback Content"):
-                st.write("**Description:**")
-                st.write(row.get('feedback', 'No content provided'))
+    #         # Feedback content in expandable section
+    #         with st.expander("📝 View Full Feedback Content"):
+    #             st.write("**Description:**")
+    #             st.write(row.get('feedback', 'No content provided'))
 
-                if row.get('ai_summary'):
-                    st.write("**AI Summary:**")
-                    st.info(row['ai_summary'])
+    #             if row.get('ai_summary'):
+    #                 st.write("**AI Summary:**")
+    #                 st.info(row['ai_summary'])
 
-                if row.get('ai_keywords') and isinstance(row['ai_keywords'], list) and row['ai_keywords']:
-                    st.write("**AI-Detected Topics:**")
-                    topics_html = " ".join([f'<span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; margin: 2px; display: inline-block; font-size: 0.85rem;">{topic}</span>' for topic in row['ai_keywords'][:10]])
-                    st.markdown(f'<div style="margin-top: 0.5rem;">{topics_html}</div>', unsafe_allow_html=True)
+    #             if row.get('ai_keywords') and isinstance(row['ai_keywords'], list) and row['ai_keywords']:
+    #                 st.write("**AI-Detected Topics:**")
+    #                 topics_html = " ".join([f'<span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; margin: 2px; display: inline-block; font-size: 0.85rem;">{topic}</span>' for topic in row['ai_keywords'][:10]])
+    #                 st.markdown(f'<div style="margin-top: 0.5rem;">{topics_html}</div>', unsafe_allow_html=True)
 
-            # Admin notes section
-            if row.get('admin_notes'):
-                st.markdown("**📋 Admin Response:**")
-                st.success(row['admin_notes'])
+    #         # Admin notes section
+    #         if row.get('admin_notes'):
+    #             st.markdown("**📋 Admin Response:**")
+    #             st.success(row['admin_notes'])
 
-            st.markdown("</div>", unsafe_allow_html=True)
+    #         st.markdown("</div>", unsafe_allow_html=True)
             
-            # Action buttons
-            col_actions1, col_actions2, col_actions3, col_actions4 = st.columns(4)
+    #         # Action buttons
+    #         col_actions1, col_actions2, col_actions3, col_actions4 = st.columns(4)
             
-            with col_actions1:
-                if st.button("👀 View Details", key=f"view_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
-                    st.session_state.selected_feedback = row.get('id')
-                    st.rerun()
+    #         with col_actions1:
+    #             if st.button("👀 View Details", key=f"view_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+    #                 st.session_state.selected_feedback = row.get('id')
+    #                 st.rerun()
             
-            with col_actions2:
-                if st.button("✏️ Update Status", key=f"update_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
-                    st.session_state.editing_feedback = row.get('id')
-                    st.rerun()
+    #         with col_actions2:
+    #             if st.button("✏️ Update Status", key=f"update_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+    #                 st.session_state.editing_feedback = row.get('id')
+    #                 st.rerun()
             
-            with col_actions3:
-                if st.button("👤 Assign", key=f"assign_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
-                    st.session_state.assigning_feedback = row.get('id')
-                    st.rerun()
+    #         with col_actions3:
+    #             if st.button("👤 Assign", key=f"assign_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+    #                 st.session_state.assigning_feedback = row.get('id')
+    #                 st.rerun()
             
-            with col_actions4:
-                if st.button("📧 Respond", key=f"respond_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
-                    st.session_state.responding_feedback = row.get('id')
-                    st.rerun()
+    #         with col_actions4:
+    #             if st.button("📧 Respond", key=f"respond_{row.get('id', 'unknown')}_{counter}", use_container_width=True):
+    #                 st.session_state.responding_feedback = row.get('id')
+    #                 st.rerun()
             
-            st.divider()
+    #         st.divider()
 
 def render_all_feedback():
     """Render all feedback management page."""

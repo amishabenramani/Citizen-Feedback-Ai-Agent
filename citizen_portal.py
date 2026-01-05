@@ -1238,80 +1238,80 @@ def render_home_page():
             else:
                 st.info("No recently resolved issues")
     
-    # Quick Actions Section
-    st.markdown("""
-    <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #1f2937;
-               text-align: center; margin: 2rem 0 1rem 0;">
-        ⚡ Quick Actions
-    </h3>
-    """, unsafe_allow_html=True)
+    # # Quick Actions Section
+    # st.markdown("""
+    # <h3 style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #1f2937;
+    #            text-align: center; margin: 2rem 0 1rem 0;">
+    #     ⚡ Quick Actions
+    # </h3>
+    # """, unsafe_allow_html=True)
     
-    # Quick action buttons in a grid
-    col_q1, col_q2, col_q3, col_q4 = st.columns(4)
+    # # Quick action buttons in a grid
+    # col_q1, col_q2, col_q3, col_q4 = st.columns(4)
     
-    with col_q1:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-                    border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
-                    border: 1px solid #93c5fd; cursor: pointer; transition: all 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
-            <div style="font-weight: 600; color: #1e40af;">Submit Feedback</div>
-            <div style="font-size: 0.8rem; color: #3730a3; margin-top: 0.25rem;">Share your concerns</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Submit Now", key="quick_submit", use_container_width=True):
-            st.session_state.nav_to = "submit"
-            st.rerun()
+    # with col_q1:
+    #     st.markdown("""
+    #     <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    #                 border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
+    #                 border: 1px solid #93c5fd; cursor: pointer; transition: all 0.2s ease;"
+    #                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)'"
+    #                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.2)'">
+    #         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+    #         <div style="font-weight: 600; color: #1e40af;">Submit Feedback</div>
+    #         <div style="font-size: 0.8rem; color: #3730a3; margin-top: 0.25rem;">Share your concerns</div>
+    #     </div>
+    #     """, unsafe_allow_html=True)
+    #     if st.button("Submit Now", key="quick_submit", use_container_width=True):
+    #         st.session_state.nav_to = "submit"
+    #         st.rerun()
     
-    with col_q2:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-                    border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
-                    border: 1px solid #86efac; cursor: pointer; transition: all 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(34, 197, 94, 0.2)'">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
-            <div style="font-weight: 600; color: #166534;">Track Status</div>
-            <div style="font-size: 0.8rem; color: #14532d; margin-top: 0.25rem;">Check your submissions</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Track Now", key="quick_track", use_container_width=True):
-            st.session_state.nav_to = "track"
-            st.rerun()
+    # with col_q2:
+    #     st.markdown("""
+    #     <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    #                 border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
+    #                 border: 1px solid #86efac; cursor: pointer; transition: all 0.2s ease;"
+    #                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.3)'"
+    #                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(34, 197, 94, 0.2)'">
+    #         <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+    #         <div style="font-weight: 600; color: #166534;">Track Status</div>
+    #         <div style="font-size: 0.8rem; color: #14532d; margin-top: 0.25rem;">Check your submissions</div>
+    #     </div>
+    #     """, unsafe_allow_html=True)
+    #     if st.button("Track Now", key="quick_track", use_container_width=True):
+    #         st.session_state.nav_to = "track"
+    #         st.rerun()
     
-    with col_q3:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-                    border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
-                    border: 1px solid #fcd34d; cursor: pointer; transition: all 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.2)'">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📢</div>
-            <div style="font-weight: 600; color: #92400e;">Announcements</div>
-            <div style="font-size: 0.8rem; color: #78350f; margin-top: 0.25rem;">View updates</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("View Updates", key="quick_announce", use_container_width=True):
-            st.session_state.nav_to = "announce"
-            st.rerun()
+    # with col_q3:
+    #     st.markdown("""
+    #     <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    #                 border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
+    #                 border: 1px solid #fcd34d; cursor: pointer; transition: all 0.2s ease;"
+    #                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.3)'"
+    #                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.2)'">
+    #         <div style="font-size: 2rem; margin-bottom: 0.5rem;">📢</div>
+    #         <div style="font-weight: 600; color: #92400e;">Announcements</div>
+    #         <div style="font-size: 0.8rem; color: #78350f; margin-top: 0.25rem;">View updates</div>
+    #     </div>
+    #     """, unsafe_allow_html=True)
+    #     if st.button("View Updates", key="quick_announce", use_container_width=True):
+    #         st.session_state.nav_to = "announce"
+    #         st.rerun()
     
-    with col_q4:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
-                    border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
-                    border: 1px solid #c4b5fd; cursor: pointer; transition: all 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.2)'">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">❓</div>
-            <div style="font-weight: 600; color: #6b21a8;">Help & FAQ</div>
-            <div style="font-size: 0.8rem; color: #581c87; margin-top: 0.25rem;">Get assistance</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Get Help", key="quick_help", use_container_width=True):
-            st.session_state.nav_to = "help"
-            st.rerun()
+    # with col_q4:
+    #     st.markdown("""
+    #     <div style="background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
+    #                 border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;
+    #                 border: 1px solid #c4b5fd; cursor: pointer; transition: all 0.2s ease;"
+    #                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)'"
+    #                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.2)'">
+    #         <div style="font-size: 2rem; margin-bottom: 0.5rem;">❓</div>
+    #         <div style="font-weight: 600; color: #6b21a8;">Help & FAQ</div>
+    #         <div style="font-size: 0.8rem; color: #581c87; margin-top: 0.25rem;">Get assistance</div>
+    #     </div>
+    #     """, unsafe_allow_html=True)
+    #     if st.button("Get Help", key="quick_help", use_container_width=True):
+    #         st.session_state.nav_to = "help"
+    #         st.rerun()
     
     # Recent resolved issues (public)
     st.divider()
